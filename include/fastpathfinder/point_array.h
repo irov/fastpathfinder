@@ -44,10 +44,6 @@ namespace fastpathfinder
 		void pop()
 		{
 			--m_current;
-
-#	ifdef _DEBUG
-			m_array[m_current] = point(0, 0);
-#	endif
 		}
 
 		point back() const

@@ -139,6 +139,32 @@ namespace fastpathfinder
 		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////
+	uint32_t map::getWidth() const
+	{
+		return m_width;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	uint32_t map::getHeight() const
+	{
+		return m_height;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	uint32_t map::getRevision() const
+	{
+		return m_revision;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	void map::clear()
+	{
+		for( size_t j = 0; j != m_height; ++j )
+		{
+			for( size_t i = 0; i != m_width; ++i )
+			{
+				m_cells[i + j * m_width].block_mask = 0;
+			}
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////
 	bool map::setCellMask( uint32_t _x, uint32_t _y, uint32_t _mask )
 	{
 		if( _x > m_width || _y > m_height )

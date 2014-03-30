@@ -2,38 +2,45 @@
 
 #	include "stdlib.h"
 #	include "stdio.h"
+#	include "time.h"
 
-void main()
+bool test( fastpathfinder::map & m )
 {
-	fastpathfinder::map m;
+	static int iii = 0;
+	++iii;
+	srand(iii);
 
-	m.initialize( 9, 9 );
+	uint32_t width = m.getWidth();
+	uint32_t height = m.getHeight();
 
-	m.setCellMask( 1, 3, 1 );
-	m.setCellMask( 2, 3, 1 );
-	m.setCellMask( 3, 3, 1 );
-	m.setCellMask( 4, 3, 1 );
-	m.setCellMask( 5, 3, 1 );
-	m.setCellMask( 4, 4, 1 );
-	m.setCellMask( 4, 5, 1 );
-	m.setCellMask( 4, 6, 1 );
-	m.setCellMask( 4, 7, 1 );
-	m.setCellMask( 4, 8, 1 );
+	m.clear();
 
-	//m.setCellMask( 5, 6, 1 );
-	//m.setCellMask( 6, 6, 1 );
-	//m.setCellMask( 7, 6, 1 );
-	//m.setCellMask( 8, 6, 1 );
-
-	m.setCellMask( 1, 4, 1 );
-	m.setCellMask( 1, 5, 1 );
-	m.setCellMask( 1, 6, 1 );
-	m.setCellMask( 1, 7, 1 );
-
-
-	for( size_t j = 0; j != 9; ++j )
+	for( size_t i = 0; i != width * height * 0.90; ++i )
 	{
-		for( size_t i = 0; i != 9; ++i )
+		size_t x = rand() % width;
+		size_t y = rand() % height;
+
+		m.setCellMask( x, y, 1 );
+	}
+
+	uint32_t x = 2;
+	uint32_t y = 2;
+	uint32_t tx = width - 2;
+	uint32_t ty = height - 2;
+
+	m.setCellMask( x, y, 0 );
+	m.setCellMask( tx, ty, 0 );
+
+	bool result = m.findPath( x, y, tx, ty );
+
+	if( result == false )
+	{
+		return false;
+	}
+
+	for( size_t j = 0; j != height; ++j )
+	{
+		for( size_t i = 0; i != width; ++i )
 		{
 			uint32_t mask = m.getCellMask( i, j );
 
@@ -51,34 +58,29 @@ void main()
 	}
 
 	printf("\n");
+	printf("%d\n", iii);
+	printf("\n");
 
-	uint32_t x = 2;
-	uint32_t y = 6;
-	uint32_t tx = 8;
-	uint32_t ty = 8;
+	uint32_t revision = m.getRevision();
 
-	bool result = m.findPath( x, y, tx, ty );
-
-	printf("@@@ %d\n"
-		, result
-		);
-
-	for( size_t j = 0; j != 9; ++j )
+	for( size_t j = 0; j != height; ++j )
 	{
-		for( size_t i = 0; i != 9; ++i )
+		for( size_t i = 0; i != width; ++i )
 		{
 			fastpathfinder::point p(i,j);
 			fastpathfinder::cell * c = m.getCell( p );
 
-			if( c->block_mask == 0 )
+			if( c->block_mask == 0 && c->weight > 0 && c->block_revision == revision )
 			{
-				printf("%3d "
-					, c->weight / 99
-					);
+				printf("*");
+			}
+			else if( c->block_mask == 0 && c->block_revision != revision )
+			{
+				printf(" ");
 			}
 			else
 			{
-				printf("### ");
+				printf("#");
 			}
 		}
 
@@ -86,4 +88,29 @@ void main()
 	}
 
 	printf("\n");
+
+	return true;
+}
+
+void main()
+{
+	fastpathfinder::map m;
+
+	size_t width = 60;
+	size_t height = 35;
+
+	m.initialize( width, height );
+
+	while(true)
+	{
+		if( test( m ) == false )
+		{
+			system("CLS");
+			continue;
+		}
+
+		char str[80];
+		gets(str);
+		system("CLS");
+	}
 }

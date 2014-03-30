@@ -16,6 +16,12 @@ namespace fastpathfinder
 
 	public:
 		bool initialize( uint32_t _width, uint32_t _height );
+		void clear();
+
+	public:
+		uint32_t getWidth() const;
+		uint32_t getHeight() const;
+		uint32_t getRevision() const;
 
 	public:
 		bool setCellMask( uint32_t _x, uint32_t _y, uint32_t _mask );
