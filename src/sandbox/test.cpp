@@ -15,7 +15,7 @@ bool test( fastpathfinder::map & m )
 
 	m.clear();
 
-	for( size_t i = 0; i != width * height * 0.90; ++i )
+	for( size_t i = 0; i != width * height * 0.2; ++i )
 	{
 		size_t x = rand() % width;
 		size_t y = rand() % height;
@@ -88,6 +88,50 @@ bool test( fastpathfinder::map & m )
 	}
 
 	printf("\n");
+	printf("\n");
+	printf("\n");
+
+	for( size_t j = 0; j != height; ++j )
+	{
+		for( size_t i = 0; i != width; ++i )
+		{
+			fastpathfinder::point pp(i,j);
+			fastpathfinder::cell * c = m.getCell( pp );
+
+			if( c->block_mask == 0 )
+			{
+				size_t count;
+				fastpathfinder::point * p = m.getPath( count );
+
+				bool exist = false;
+				for( size_t k = 0; k != count; ++k )
+				{
+					if( p[k].x == i && p[k].y == j )
+					{
+						exist = true;
+						break;
+					}
+				}
+
+				if( exist == true )
+				{
+					printf(".");
+				}
+				else
+				{
+					printf(" ");
+				}
+			}
+			else
+			{
+				printf("#");
+			}
+		}
+
+		printf("\n");
+	}
+
+	printf("\n");
 
 	return true;
 }
@@ -97,7 +141,7 @@ void main()
 	fastpathfinder::map m;
 
 	size_t width = 60;
-	size_t height = 35;
+	size_t height = 20;
 
 	m.initialize( width, height );
 

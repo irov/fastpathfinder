@@ -9,7 +9,7 @@ namespace fastpathfinder
 	{
 	public:
 		point_array()
-			: m_array(nullptr)
+			: m_buffer(nullptr)
 			, m_size(0)
 			, m_current(0)
 		{
@@ -17,13 +17,13 @@ namespace fastpathfinder
 
 		~point_array()
 		{
-			delete [] m_array;
+			delete [] m_buffer;
 		}
 
 	public:
 		void initialize( size_t _size )
 		{
-			m_array = new point[_size];
+			m_buffer = new point[_size];
 			m_size = _size;
 
 			m_current = 0;
@@ -37,7 +37,7 @@ namespace fastpathfinder
 
 		void add( point _point )
 		{
-			m_array[m_current] = _point;
+			m_buffer[m_current] = _point;
 			++m_current;
 		}
 
@@ -48,7 +48,12 @@ namespace fastpathfinder
 
 		point back() const
 		{
-			return m_array[m_current - 1];
+			return m_buffer[m_current - 1];
+		}
+
+		point * buffer() const
+		{
+			return m_buffer;
 		}
 
 		size_t size() const
@@ -58,21 +63,21 @@ namespace fastpathfinder
 
 		void swap( point_array & _other )
 		{
-			point * other_array = _other.m_array;
+			point * other_array = _other.m_buffer;
 			size_t other_size = _other.m_size;
 			size_t other_current = _other.m_current;
 
-			_other.m_array = m_array;
+			_other.m_buffer = m_buffer;
 			_other.m_size = m_size;
 			_other.m_current = m_current;
 
-			m_array = other_array;
+			m_buffer = other_array;
 			m_size = other_size;
 			m_current = other_current;
 		}
 
 	protected:
-		point * m_array;
+		point * m_buffer;
 		size_t m_size;
 
 		size_t m_current;

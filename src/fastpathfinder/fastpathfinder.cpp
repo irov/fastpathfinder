@@ -63,6 +63,7 @@ namespace fastpathfinder
 	//////////////////////////////////////////////////////////////////////////
 	const uint32_t cell_matrix_to_angle[9] = {3, 2, 1, 4, 8, 0, 5, 6, 7};
 	const uint32_t cell_angle_to_matrix[9] = {5, 2, 1, 0, 3, 6, 7, 8, 4};
+	const bool cell_angle_to_test_wall[9] = {false, true, false, true, false, true, false, true, false};
 	//////////////////////////////////////////////////////////////////////////
 	static uint32_t s_get_next_point_angle( point _from, point _to )
 	{
@@ -88,16 +89,21 @@ namespace fastpathfinder
 		return weight;
 	}
 	//////////////////////////////////////////////////////////////////////////
-	static point s_get_next_foreach_point( point _point, uint32_t _angle, uint32_t _index )
+	static uint32_t s_get_next_foreach_angle( uint32_t _angle, uint32_t _index )
 	{
 		int32_t deltha = cell_next_point_deltha[_index];
 
 		uint32_t next_angle = (_angle + 8 + deltha) % 8;
 
-		uint32_t next_matrix = cell_angle_to_matrix[next_angle];
+		return next_angle;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	static point s_get_point_next_angle( point _point, uint32_t _angle )
+	{
+		uint32_t matrix = cell_angle_to_matrix[_angle];
 
-		int32_t dx = cell_matrix_to_deltha_x[next_matrix];
-		int32_t dy = cell_matrix_to_deltha_y[next_matrix];
+		int32_t dx = cell_matrix_to_deltha_x[matrix];
+		int32_t dy = cell_matrix_to_deltha_y[matrix];
 
 		uint32_t nx = _point.x + dx;
 		uint32_t ny = _point.y + dy;
@@ -206,7 +212,6 @@ namespace fastpathfinder
 	bool map::findPath( uint32_t _fromX, uint32_t _fromY, uint32_t _toX, uint32_t _toY )
 	{
 		point from(_fromX, _fromY);
-		point to(_toX, _toY);
 
 		cell * fromCell = this->getCell( from );
 
@@ -215,22 +220,42 @@ namespace fastpathfinder
 			return false;
 		}
 
+		point to(_toX, _toY);
+
+		cell * toCell = this->getCell( to );
+
+		if( toCell->block_mask != 0 )
+		{
+			return false;
+		}
+
 		++m_revision;
 
-		fromCell->block_revision = m_revision;
-		fromCell->weight = 0;
+		toCell->block_revision = m_revision;
+		toCell->weight = 0;
 
-		if( this->walkerProcessFirst( from, to ) == false )
+		if( this->walkerProcessFirst( to, from ) == false )
 		{
 			return false;
 		}
 			
-		if( this->findProcces( to, from ) == false )
+		if( this->findProcces( from, to ) == false )
 		{
 			return false;
 		}
+
+		this->findFilter();
 		
 		return true;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	point * map::getPath( size_t & _size )
+	{
+		_size = m_path.size();
+
+		point * buffer = m_path.buffer();
+
+		return buffer;
 	}
 	//////////////////////////////////////////////////////////////////////////
 	bool map::findAround( point _point )
@@ -327,6 +352,80 @@ namespace fastpathfinder
 		return false;
 	}
 	//////////////////////////////////////////////////////////////////////////
+	bool map::testWall( point _point, uint32_t _angle ) const
+	{
+		bool test_wall = cell_angle_to_test_wall[_angle];
+
+		if( test_wall == false )
+		{
+			return true;
+		}
+
+		for( uint32_t i = 0; i != 2; ++i )
+		{
+			uint32_t next_angle = s_get_next_foreach_angle( _angle, i );
+			point nearest = s_get_point_next_angle( _point, next_angle );
+
+			if( nearest.x >= m_width || nearest.y >= m_height )
+			{
+				continue;
+			}
+
+			cell * nearest_cell = this->getCell( nearest );
+
+			if( nearest_cell->block_mask == 0 )
+			{
+				continue;
+			}
+
+			return false;
+		}
+
+		return true;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	bool map::nextWalk( point _prev, uint32_t _weight, uint32_t _angle, uint32_t _index, point_array & _array )
+	{
+		uint32_t next_angle = s_get_next_foreach_angle( _angle, _index );
+		point nearest = s_get_point_next_angle( _prev, next_angle );
+
+		if( nearest.x >= m_width || nearest.y >= m_height )
+		{
+			return false;
+		}
+
+		uint32_t nearest_weight = s_get_next_point_weight( _prev, nearest );
+		uint32_t nearest_cell_weight = _weight + nearest_weight;
+
+		cell * nearest_cell = this->getCell( nearest );
+
+		if( ( nearest_cell->block_mask != 0 ) || 
+			( nearest_cell->block_revision == m_revision && nearest_cell->weight <= nearest_cell_weight ) ||
+			( this->testWall( _prev, next_angle ) == false ) )
+		{
+			return false;
+		}
+
+		nearest_cell->block_revision = m_revision;
+		nearest_cell->weight = nearest_cell_weight;
+
+		_array.add( nearest );
+
+		return true;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	void map::findFilter()
+	{
+		for( size_t 
+			it = 0,
+			it_end = m_path.size(); 
+		it != it_end;
+		++it )
+		{
+
+		}
+	}
+	//////////////////////////////////////////////////////////////////////////
 	bool map::walkerBresenham( point _from, point _to )
 	{
 		bresenham_line br;
@@ -341,40 +440,25 @@ namespace fastpathfinder
 
 		while( next.x != _to.x || next.y != _to.y )
 		{	
+			uint32_t angle = s_get_next_point_angle( prev, next );
+
+			bool test_wall = cell_angle_to_test_wall[angle];
+
 			uint32_t next_weight = s_get_next_point_weight( prev, next );
 			uint32_t next_cell_weight = weight + next_weight;
 
 			cell * next_cell = this->getCell( next );
 
 			if( ( next_cell->block_mask != 0 ) || 
-				( next_cell->block_revision == m_revision && next_cell->weight <= next_cell_weight ) )
+				( next_cell->block_revision == m_revision && next_cell->weight <= next_cell_weight ) ||
+				( this->testWall( prev, angle ) == false ) )
 			{
-				uint32_t angle = s_get_next_point_angle( prev, next );
-
 				for( uint32_t i = 0; i != 2; ++i )
 				{
-					point nearest = s_get_next_foreach_point( prev, angle, i );
-
-					if( nearest.x >= m_width || nearest.y >= m_height )
+					if( this->nextWalk( prev, weight, angle, i, m_walker_true ) == false )
 					{
 						continue;
 					}
-
-					uint32_t nearest_weight = s_get_next_point_weight( prev, nearest );
-					uint32_t nearest_cell_weight = weight + nearest_weight;
-
-					cell * nearest_cell = this->getCell( nearest );
-
-					if( ( nearest_cell->block_mask != 0 ) || 
-						( nearest_cell->block_revision == m_revision && nearest_cell->weight <= nearest_cell_weight ) )
-					{
-						continue;
-					}
-
-					nearest_cell->block_revision = m_revision;
-					nearest_cell->weight = nearest_cell_weight;
-
-					m_walker_true.add( nearest );
 
 					return false;
 				}
@@ -383,28 +467,10 @@ namespace fastpathfinder
 
 				for( uint32_t i = 2; i != 7; ++i )
 				{
-					point nearest = s_get_next_foreach_point( prev, angle, i );
-
-					if( nearest.x >= m_width || nearest.y >= m_height )
+					if( this->nextWalk( prev, weight, angle, i, m_walker_false ) == false )
 					{
 						continue;
 					}
-
-					uint32_t nearest_weight = s_get_next_point_weight( prev, nearest );
-					uint32_t nearest_cell_weight = weight + nearest_weight;
-
-					cell * nearest_cell = this->getCell( nearest );
-
-					if( ( nearest_cell->block_mask != 0 ) || 
-						( nearest_cell->block_revision == m_revision && nearest_cell->weight <= nearest_cell_weight ) )
-					{
-						continue;
-					}
-
-					nearest_cell->block_revision = m_revision;
-					nearest_cell->weight = nearest_cell_weight;
-
-					m_walker_false.add( nearest );
 				}
 
 				return false;
