@@ -61,6 +61,16 @@ namespace fastpathfinder
 			return m_current;
 		}
 
+		point & operator [] ( size_t _index )
+		{
+			return m_buffer[_index];
+		}
+
+		point operator [] ( size_t _index ) const
+		{
+			return m_buffer[_index];
+		}
+
 		void swap( point_array & _other )
 		{
 			point * other_array = _other.m_buffer;

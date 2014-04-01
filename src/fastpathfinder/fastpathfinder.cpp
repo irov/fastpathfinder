@@ -141,6 +141,7 @@ namespace fastpathfinder
 		m_walker_true.initialize( m_width * m_height * 2);
 		m_walker_false.initialize( m_width * m_height * 2);
 		m_path.initialize( m_width * m_height );
+		m_path_filter.initialize( m_width * m_height );
 
 		return true;
 	}
@@ -258,6 +259,15 @@ namespace fastpathfinder
 		return buffer;
 	}
 	//////////////////////////////////////////////////////////////////////////
+	point * map::getPathFilter( size_t & _size )
+	{
+		_size = m_path_filter.size();
+
+		point * buffer = m_path_filter.buffer();
+
+		return buffer;
+	}
+	//////////////////////////////////////////////////////////////////////////
 	bool map::findAround( point _point )
 	{
 		cell * point_cell = this->getCell( _point );
@@ -358,7 +368,7 @@ namespace fastpathfinder
 
 		if( test_wall == false )
 		{
-			return true;
+			return false;
 		}
 
 		for( uint32_t i = 0; i != 2; ++i )
@@ -378,10 +388,10 @@ namespace fastpathfinder
 				continue;
 			}
 
-			return false;
+			return true;
 		}
 
-		return true;
+		return false;
 	}
 	//////////////////////////////////////////////////////////////////////////
 	bool map::nextWalk( point _prev, uint32_t _weight, uint32_t _angle, uint32_t _index, point_array & _array )
@@ -401,7 +411,7 @@ namespace fastpathfinder
 
 		if( ( nearest_cell->block_mask != 0 ) || 
 			( nearest_cell->block_revision == m_revision && nearest_cell->weight <= nearest_cell_weight ) ||
-			( this->testWall( _prev, next_angle ) == false ) )
+			( this->testWall( _prev, next_angle ) == true ) )
 		{
 			return false;
 		}
@@ -414,15 +424,88 @@ namespace fastpathfinder
 		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////
+	bool map::testWallBresenham( point _from, point _to ) const
+	{
+		bresenham_line br;
+		s_make_bresenham_line( br, _from, _to );
+
+		point next = _from;
+		while( next.x != _to.x || next.y != _to.y )
+		{
+			point prev = next;
+			next = s_next_bresenham_line_point( br, prev );
+
+			uint32_t angle = s_get_next_point_angle( prev, next );
+
+			cell * c = this->getCell( next );
+
+			if( ( c->block_mask == 0 ) &&
+				( this->testWall( prev, angle ) == false ) )
+			{
+				continue;
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+	//////////////////////////////////////////////////////////////////////////
 	void map::findFilter()
 	{
+		size_t size = m_path.size();
+		
+		if( size < 2 )
+		{
+			return;
+		}
+
+		if( size == 2 )
+		{
+			point p0 = m_path[0];
+			point p1 = m_path[1];
+
+			m_path_filter.add( p0 );
+			m_path_filter.add( p1 );
+
+			return;
+		}
+
+		point p0 = m_path[0];
+		m_path_filter.clear();
+		m_path_filter.add( p0 );
+
 		for( size_t 
 			it = 0,
-			it_end = m_path.size(); 
-		it != it_end;
-		++it )
+			it_end = size - 2;
+		it < it_end; 
+		)
 		{
+			point p0 = m_path[it];
 
+			size_t it2 = it + 1;
+			point p2 = m_path[it2];
+			
+			for( size_t 
+				it_next = it + 2,
+				it_next_end = size; 
+			it_next != it_next_end;
+			++it_next )
+			{
+				point p1 = m_path[it_next];
+								
+				if( this->testWallBresenham( p0, p1 ) == true )
+				{
+					continue;
+				}
+
+				p2 = p1;
+				it2 = it_next;
+			}
+
+			m_path_filter.add( p2 );
+
+			it = it2;
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////
@@ -438,7 +521,7 @@ namespace fastpathfinder
 		point prev = _from;
 		point next = s_next_bresenham_line_point( br, _from );
 
-		while( next.x != _to.x || next.y != _to.y )
+		while( true )
 		{	
 			uint32_t angle = s_get_next_point_angle( prev, next );
 
@@ -451,7 +534,7 @@ namespace fastpathfinder
 
 			if( ( next_cell->block_mask != 0 ) || 
 				( next_cell->block_revision == m_revision && next_cell->weight <= next_cell_weight ) ||
-				( this->testWall( prev, angle ) == false ) )
+				( this->testWall( prev, angle ) == true ) )
 			{
 				for( uint32_t i = 0; i != 2; ++i )
 				{
@@ -474,6 +557,11 @@ namespace fastpathfinder
 				}
 
 				return false;
+			}
+
+			if( next.x == _to.x && next.y == _to.y )
+			{
+				break;
 			}
 
 			next_cell->block_revision = m_revision;

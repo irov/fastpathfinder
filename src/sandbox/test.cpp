@@ -132,6 +132,50 @@ bool test( fastpathfinder::map & m )
 	}
 
 	printf("\n");
+	printf("\n");
+	printf("\n");
+
+	for( size_t j = 0; j != height; ++j )
+	{
+		for( size_t i = 0; i != width; ++i )
+		{
+			fastpathfinder::point pp(i,j);
+			fastpathfinder::cell * c = m.getCell( pp );
+
+			if( c->block_mask == 0 )
+			{
+				size_t count;
+				fastpathfinder::point * p = m.getPathFilter( count );
+
+				bool exist = false;
+				for( size_t k = 0; k != count; ++k )
+				{
+					if( p[k].x == i && p[k].y == j )
+					{
+						exist = true;
+						break;
+					}
+				}
+
+				if( exist == true )
+				{
+					printf(".");
+				}
+				else
+				{
+					printf(" ");
+				}
+			}
+			else
+			{
+				printf("#");
+			}
+		}
+
+		printf("\n");
+	}
+
+	printf("\n");
 
 	return true;
 }
