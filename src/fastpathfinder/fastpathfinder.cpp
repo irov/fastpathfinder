@@ -1,5 +1,7 @@
 #	include "fastpathfinder/fastpathfinder.h"
 
+#	include <memory.h>
+
 namespace fastpathfinder
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -163,13 +165,7 @@ namespace fastpathfinder
 	//////////////////////////////////////////////////////////////////////////
 	void map::clear()
 	{
-		for( size_t j = 0; j != m_height; ++j )
-		{
-			for( size_t i = 0; i != m_width; ++i )
-			{
-				m_cells[i + j * m_width].block_mask = 0;
-			}
-		}
+		memset( m_cells, 0, m_width * m_height * sizeof(m_cells[0]) );
 	}
 	//////////////////////////////////////////////////////////////////////////
 	bool map::setCellMask( uint32_t _x, uint32_t _y, uint32_t _mask )
@@ -273,6 +269,8 @@ namespace fastpathfinder
 		cell * point_cell = this->getCell( _point );
 		uint32_t weight = point_cell->weight;
 
+		point p = _point;
+
 		for( uint32_t i = 0; i != 8; ++i )
 		{
 			int32_t dx = cell_angle_to_deltha_x[i];
@@ -294,19 +292,18 @@ namespace fastpathfinder
 				continue;
 			}
 
-			uint32_t next_weight = cell_angle_to_weight[i];
-
-			if( weight - next_weight != next_cell->weight )
+			if( weight < next_cell->weight )
 			{
 				continue;
 			}
 
-			m_path.add( next );
-
-			return true;
+			p = next;
+			weight = next_cell->weight;				
 		}
+		
+		m_path.add( p );
 
-		return false;
+		return true;
 	}
 	//////////////////////////////////////////////////////////////////////////
 	bool map::findProcces( point _from, point _to )
