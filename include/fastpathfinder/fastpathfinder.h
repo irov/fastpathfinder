@@ -38,7 +38,7 @@ namespace fastpathfinder
 		int32_t error;
 	};
 	//////////////////////////////////////////////////////////////////////////
-	static void s_make_bresenham_line( bresenham_line & _br, point _from, point _to )
+	inline static void s_make_bresenham_line( bresenham_line & _br, point _from, point _to )
 	{
 		_br.deltaX = _to.x > _from.x ? _to.x - _from.x : _from.x - _to.x;
 		_br.deltaY = _to.y > _from.y ? _to.y - _from.y : _from.y - _to.y;
@@ -49,7 +49,7 @@ namespace fastpathfinder
 		_br.error = _br.deltaX - _br.deltaY;
 	}
 	//////////////////////////////////////////////////////////////////////////
-	static point s_next_bresenham_line_point( bresenham_line & _br, point _point )
+	inline static point s_next_bresenham_line_point( bresenham_line & _br, point _point )
 	{
 		point next_point(_point);
 
@@ -72,7 +72,7 @@ namespace fastpathfinder
 		return next_point;
 	}
 	//////////////////////////////////////////////////////////////////////////
-	static uint32_t s_get_next_point_angle( point _from, point _to )
+	inline static uint32_t s_get_next_point_angle( point _from, point _to )
 	{
 		uint32_t deltaX = _to.x >= _from.x ? (_to.x - _from.x) + 1 : 0;
 		uint32_t deltaY = _to.y >= _from.y ? (_to.y - _from.y) + 1 : 0;
@@ -84,7 +84,7 @@ namespace fastpathfinder
 		return angle;
 	}
 	//////////////////////////////////////////////////////////////////////////
-	static uint32_t s_get_next_point_weight( point _from, point _to )
+	inline static uint32_t s_get_next_point_weight( point _from, point _to )
 	{
 		uint32_t deltaX = _to.x > _from.x ? _to.x - _from.x : _from.x - _to.x;
 		uint32_t deltaY = _to.y > _from.y ? _to.y - _from.y : _from.y - _to.y;
@@ -96,7 +96,7 @@ namespace fastpathfinder
 		return weight;
 	}
 	//////////////////////////////////////////////////////////////////////////
-	static uint32_t s_get_next_foreach_angle( uint32_t _angle, uint32_t _index )
+	inline static uint32_t s_get_next_foreach_angle( uint32_t _angle, uint32_t _index )
 	{
 		int32_t deltha = cell_next_point_deltha[_index];
 
@@ -105,7 +105,7 @@ namespace fastpathfinder
 		return next_angle;
 	}
 	//////////////////////////////////////////////////////////////////////////
-	static point s_get_point_next_angle( point _point, uint32_t _angle )
+	inline static point s_get_point_next_angle( point _point, uint32_t _angle )
 	{
 		uint32_t matrix = cell_angle_to_matrix[_angle];
 
@@ -120,7 +120,7 @@ namespace fastpathfinder
 		return np;
 	}
 	//////////////////////////////////////////////////////////////////////////
-	static uint32_t s_point_distance( point p0, point p1 )
+	inline static uint32_t s_point_distance( point p0, point p1 )
 	{
 		uint32_t dx = ( p1.x > p0.x ) ? p1.x - p0.x : p0.x - p1.x;
 		uint32_t dy = ( p1.y > p0.y ) ? p1.y - p0.y : p0.y - p1.y;
