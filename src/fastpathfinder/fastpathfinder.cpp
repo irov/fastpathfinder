@@ -240,8 +240,6 @@ namespace fastpathfinder
 		{
 			return false;
 		}
-
-		this->findFilter();
 		
 		return true;
 	}
