@@ -24,10 +24,10 @@
     <ClInclude Include="..\..\include\fastpathfinder\point.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\fastpathfinder\point_array.h">
+    <ClInclude Include="..\..\include\fastpathfinder\cell.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\fastpathfinder\cell.h">
+    <ClInclude Include="..\..\include\fastpathfinder\array.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

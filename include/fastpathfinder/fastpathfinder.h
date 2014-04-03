@@ -5,10 +5,12 @@
 
 #	include "fastpathfinder/cell.h"
 #	include "fastpathfinder/point.h"
-#	include "fastpathfinder/point_array.h"
+#	include "fastpathfinder/array.h"
 
 namespace fastpathfinder
 {
+	//////////////////////////////////////////////////////////////////////////
+	typedef array<point> point_array;
 	//////////////////////////////////////////////////////////////////////////
 	static const int32_t cell_next_point_deltha[7] = {-1, 1, -2, 2, -3, 3, 4};
 	//////////////////////////////////////////////////////////////////////////
@@ -219,6 +221,11 @@ namespace fastpathfinder
 			, m_revision(0)
 			, m_walkerWeight(0)
 		{
+		}
+
+		~map()
+		{
+			delete [] m_cells;
 		}
 
 	public:

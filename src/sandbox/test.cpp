@@ -185,7 +185,7 @@ bool test( fastpathfinder::map<> & m )
 	return true;
 }
 
-void main()
+void test1()
 {
 	fastpathfinder::map<> m;
 
@@ -206,4 +206,22 @@ void main()
 		gets(str);
 		system("CLS");
 	}
+}
+
+void test2()
+{
+	while(true)
+	{
+		fastpathfinder::map<> m;
+
+		size_t width = 60;
+		size_t height = 20;
+
+		m.initialize( width, height );
+	}
+}
+
+void main()
+{
+	test1();
 }

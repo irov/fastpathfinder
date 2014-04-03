@@ -75,10 +75,10 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\fastpathfinder\array.h" />
     <ClInclude Include="..\..\include\fastpathfinder\cell.h" />
     <ClInclude Include="..\..\include\fastpathfinder\fastpathfinder.h" />
     <ClInclude Include="..\..\include\fastpathfinder\point.h" />
-    <ClInclude Include="..\..\include\fastpathfinder\point_array.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

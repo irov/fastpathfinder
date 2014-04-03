@@ -1,21 +1,23 @@
 #	pragma once
 
-#	include "fastpathfinder/point.h"
-
 namespace fastpathfinder
 {
-	//////////////////////////////////////////////////////////////////////////	
-	struct point_array
+	//////////////////////////////////////////////////////////////////////////
+	template<class T>
+	struct array
 	{
 	public:
-		point_array()
+		typedef T value_type;
+
+	public:
+		array()
 			: m_buffer(nullptr)
 			, m_size(0)
 			, m_current(0)
 		{
 		}
 
-		~point_array()
+		~array()
 		{
 			delete [] m_buffer;
 		}
@@ -23,7 +25,7 @@ namespace fastpathfinder
 	public:
 		void initialize( size_t _size )
 		{
-			m_buffer = new point[_size];
+			m_buffer = new value_type[_size];
 			m_size = _size;
 
 			m_current = 0;
@@ -35,9 +37,9 @@ namespace fastpathfinder
 			m_current = 0;
 		}
 
-		void add( point _point )
+		void add( value_type _value )
 		{
-			m_buffer[m_current] = _point;
+			m_buffer[m_current] = _value;
 			++m_current;
 		}
 
@@ -46,12 +48,12 @@ namespace fastpathfinder
 			--m_current;
 		}
 
-		point back() const
+		value_type back() const
 		{
 			return m_buffer[m_current - 1];
 		}
 
-		point * buffer() const
+		value_type * buffer() const
 		{
 			return m_buffer;
 		}
@@ -61,19 +63,19 @@ namespace fastpathfinder
 			return m_current;
 		}
 
-		point & operator [] ( size_t _index )
+		value_type & operator [] ( size_t _index )
 		{
 			return m_buffer[_index];
 		}
 
-		point operator [] ( size_t _index ) const
+		value_type operator [] ( size_t _index ) const
 		{
 			return m_buffer[_index];
 		}
 
-		void swap( point_array & _other )
+		void swap( array & _other )
 		{
-			point * other_array = _other.m_buffer;
+			value_type * other_array = _other.m_buffer;
 			size_t other_size = _other.m_size;
 			size_t other_current = _other.m_current;
 
@@ -87,7 +89,7 @@ namespace fastpathfinder
 		}
 
 	protected:
-		point * m_buffer;
+		value_type * m_buffer;
 		size_t m_size;
 
 		size_t m_current;
