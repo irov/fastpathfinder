@@ -4,7 +4,7 @@
 #	include "stdio.h"
 #	include "time.h"
 
-bool test( fastpathfinder::map & m )
+bool test( fastpathfinder::map<> & m )
 {
 	static int iii = 0;
 	++iii;
@@ -100,8 +100,10 @@ bool test( fastpathfinder::map & m )
 
 			if( c->block_mask == 0 )
 			{
-				size_t count;
-				fastpathfinder::point * p = m.getPath( count );
+				const fastpathfinder::point_array & pa = m.getPath();
+				size_t count = pa.size();
+				fastpathfinder::point * p = pa.buffer();
+
 
 				bool exist = false;
 				for( size_t k = 0; k != count; ++k )
@@ -146,8 +148,9 @@ bool test( fastpathfinder::map & m )
 
 			if( c->block_mask == 0 )
 			{
-				size_t count;
-				fastpathfinder::point * p = m.getPathFilter( count );
+				const fastpathfinder::point_array & pa = m.getPathFilter();
+				size_t count = pa.size();
+				fastpathfinder::point * p = pa.buffer();					
 
 				bool exist = false;
 				for( size_t k = 0; k != count; ++k )
@@ -184,7 +187,7 @@ bool test( fastpathfinder::map & m )
 
 void main()
 {
-	fastpathfinder::map m;
+	fastpathfinder::map<> m;
 
 	size_t width = 60;
 	size_t height = 20;

@@ -80,9 +80,6 @@
     <ClInclude Include="..\..\include\fastpathfinder\point.h" />
     <ClInclude Include="..\..\include\fastpathfinder\point_array.h" />
   </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\src\fastpathfinder\fastpathfinder.cpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
