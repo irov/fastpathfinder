@@ -575,6 +575,13 @@ namespace fastpathfinder
 				{
 					continue;
 				}
+				
+				uint32_t angle = s_get_next_point_angle( _point, next );
+
+				if( TestWall(m_cells, m_width, m_height)( _point, angle ) == true )
+				{
+					continue;
+				}
 
 				p = next;
 				weight = next_cell->weight;				

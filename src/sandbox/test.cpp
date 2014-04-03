@@ -15,7 +15,8 @@ bool test( fastpathfinder::map<> & m )
 
 	m.clear();
 
-	for( size_t i = 0; i != width * height * 0.2; ++i )
+	size_t count = width * height * 0.2;
+	for( size_t i = 0; i != count; ++i )
 	{
 		size_t x = rand() % width;
 		size_t y = rand() % height;
@@ -31,12 +32,16 @@ bool test( fastpathfinder::map<> & m )
 	m.setCellMask( x, y, 0 );
 	m.setCellMask( tx, ty, 0 );
 
-	bool result = m.findPath( x, y, tx, ty );
+	//bool result = m.findPath( x, y, tx, ty );
+	bool result = m.findPath( tx, ty, x, y );
 
-	if( result == false )
-	{
-		return false;
-	}
+	return result;
+}
+
+void print_map( fastpathfinder::map<> & m )
+{
+	uint32_t width = m.getWidth();
+	uint32_t height = m.getHeight();
 
 	for( size_t j = 0; j != height; ++j )
 	{
@@ -58,7 +63,7 @@ bool test( fastpathfinder::map<> & m )
 	}
 
 	printf("\n");
-	printf("%d\n", iii);
+	printf("\n");
 	printf("\n");
 
 	uint32_t revision = m.getRevision();
@@ -181,8 +186,6 @@ bool test( fastpathfinder::map<> & m )
 	}
 
 	printf("\n");
-
-	return true;
 }
 
 void test1()
@@ -202,6 +205,8 @@ void test1()
 			continue;
 		}
 
+		print_map( m );
+
 		char str[80];
 		gets(str);
 		system("CLS");
@@ -214,14 +219,25 @@ void test2()
 	{
 		fastpathfinder::map<> m;
 
-		size_t width = 60;
-		size_t height = 20;
+		size_t width = 1024;
+		size_t height = 1024;
 
 		m.initialize( width, height );
+
+		while(true)
+		{
+			bool result = test( m );
+
+			if( result == true )
+			{
+				printf("*");
+			}
+		}
 	}
 }
 
 void main()
 {
 	test1();
+	//test2();
 }
