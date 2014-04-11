@@ -1,10 +1,37 @@
-#	include "fastpathfinder/fastpathfinder.h"
+#	include "fastpathfinder/map.h"
+#	include "fastpathfinder/pathfinder.h"
 
 #	include "stdlib.h"
 #	include "stdio.h"
 #	include "time.h"
 
-bool test( fastpathfinder::map<> & m )
+static void print_map( fastpathfinder::map & m, size_t _bx, size_t _by, size_t _ex, size_t _ey )
+{
+	for( size_t j = _by; j != _ey; ++j )
+	{
+		for( size_t i = _bx; i != _ex; ++i )
+		{
+			uint32_t mask;
+			if( m.getCellMask( i, j, mask ) == false )
+			{
+				continue;
+			}
+
+			if( mask > 0 )
+			{
+				printf("#");
+			}
+			else
+			{
+				printf(".");
+			}
+		}
+
+		printf("\n");
+	}
+}
+
+bool test( fastpathfinder::map & m )
 {
 	static int iii = 0;
 	++iii;
@@ -15,7 +42,7 @@ bool test( fastpathfinder::map<> & m )
 
 	m.clear();
 
-	size_t count = width * height * 0.2;
+	size_t count = width * height * 0.2f;
 	for( size_t i = 0; i != count; ++i )
 	{
 		size_t x = rand() % width;
@@ -31,166 +58,35 @@ bool test( fastpathfinder::map<> & m )
 
 	m.setCellMask( x, y, 0 );
 	m.setCellMask( tx, ty, 0 );
+	
+	m.setCellMask( tx + 1, ty, 1 );
+	m.setCellMask( tx, ty + 1, 1 );
+	m.setCellMask( tx - 1, ty, 1 );
+	m.setCellMask( tx, ty - 1, 1 );
+
+	print_map( m, 0, 0, width, height );
 
 	//bool result = m.findPath( x, y, tx, ty );
-	bool result = m.findPath( tx, ty, x, y );
+	fastpathfinder::pathfinder<> pf;
+	pf.initialize( &m );
 
-	return result;
-}
-
-void print_map( fastpathfinder::map<> & m )
-{
-	uint32_t width = m.getWidth();
-	uint32_t height = m.getHeight();
-
-	for( size_t j = 0; j != height; ++j )
+	if( pf.findPathFirst( x, y, tx, ty ) == false )
 	{
-		for( size_t i = 0; i != width; ++i )
-		{
-			uint32_t mask = m.getCellMask( i, j );
-
-			if( mask > 0 )
-			{
-				printf("#");
-			}
-			else
-			{
-				printf(".");
-			}
-		}
-
-		printf("\n");
+		return false;
 	}
 
-	printf("\n");
-	printf("\n");
-	printf("\n");
-
-	uint32_t revision = m.getRevision();
-
-	for( size_t j = 0; j != height; ++j )
+	bool found;
+	while( pf.findPathNext( found ) == false )
 	{
-		for( size_t i = 0; i != width; ++i )
-		{
-			fastpathfinder::point p(i,j);
-			fastpathfinder::cell * c = m.getCell( p );
-
-			if( c->block_mask == 0 && c->weight > 0 && c->block_revision == revision )
-			{
-				printf("*");
-			}
-			else if( c->block_mask == 0 && c->block_revision != revision )
-			{
-				printf(" ");
-			}
-			else
-			{
-				printf("#");
-			}
-		}
-
-		printf("\n");
+		printf("!");
 	}
 
-	printf("\n");
-	printf("\n");
-	printf("\n");
-
-	for( size_t j = 0; j != height; ++j )
-	{
-		for( size_t i = 0; i != width; ++i )
-		{
-			fastpathfinder::point pp(i,j);
-			fastpathfinder::cell * c = m.getCell( pp );
-
-			if( c->block_mask == 0 )
-			{
-				const fastpathfinder::point_array & pa = m.getPath();
-				size_t count = pa.size();
-				fastpathfinder::point * p = pa.buffer();
-
-
-				bool exist = false;
-				for( size_t k = 0; k != count; ++k )
-				{
-					if( p[k].x == i && p[k].y == j )
-					{
-						exist = true;
-						break;
-					}
-				}
-
-				if( exist == true )
-				{
-					printf(".");
-				}
-				else
-				{
-					printf(" ");
-				}
-			}
-			else
-			{
-				printf("#");
-			}
-		}
-
-		printf("\n");
-	}
-
-	printf("\n");
-	printf("\n");
-	printf("\n");
-
-	m.findFilter();
-
-	for( size_t j = 0; j != height; ++j )
-	{
-		for( size_t i = 0; i != width; ++i )
-		{
-			fastpathfinder::point pp(i,j);
-			fastpathfinder::cell * c = m.getCell( pp );
-
-			if( c->block_mask == 0 )
-			{
-				const fastpathfinder::point_array & pa = m.getPathFilter();
-				size_t count = pa.size();
-				fastpathfinder::point * p = pa.buffer();					
-
-				bool exist = false;
-				for( size_t k = 0; k != count; ++k )
-				{
-					if( p[k].x == i && p[k].y == j )
-					{
-						exist = true;
-						break;
-					}
-				}
-
-				if( exist == true )
-				{
-					printf(".");
-				}
-				else
-				{
-					printf(" ");
-				}
-			}
-			else
-			{
-				printf("#");
-			}
-		}
-
-		printf("\n");
-	}
-
-	printf("\n");
+	return found;
 }
 
 void test1()
 {
-	fastpathfinder::map<> m;
+	fastpathfinder::map m;
 
 	size_t width = 60;
 	size_t height = 20;
@@ -204,40 +100,13 @@ void test1()
 			system("CLS");
 			continue;
 		}
-
-		print_map( m );
-
+				
 		char str[80];
 		gets(str);
 		system("CLS");
 	}
 }
-
-void test2()
-{
-	while(true)
-	{
-		fastpathfinder::map<> m;
-
-		size_t width = 1024;
-		size_t height = 1024;
-
-		m.initialize( width, height );
-
-		while(true)
-		{
-			bool result = test( m );
-
-			if( result == true )
-			{
-				printf("*");
-			}
-		}
-	}
-}
-
 void main()
 {
 	test1();
-	//test2();
 }
