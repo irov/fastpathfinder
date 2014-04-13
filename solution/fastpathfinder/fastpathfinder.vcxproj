@@ -76,8 +76,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\fastpathfinder\array.h" />
-    <ClInclude Include="..\..\include\fastpathfinder\cell.h" />
-    <ClInclude Include="..\..\include\fastpathfinder\fastpathfinder.h" />
+    <ClInclude Include="..\..\include\fastpathfinder\helper.h" />
+    <ClInclude Include="..\..\include\fastpathfinder\map.h" />
+    <ClInclude Include="..\..\include\fastpathfinder\map_cell.h" />
+    <ClInclude Include="..\..\include\fastpathfinder\map_test_wall.h" />
+    <ClInclude Include="..\..\include\fastpathfinder\pathfinder.h" />
+    <ClInclude Include="..\..\include\fastpathfinder\pathfinder_cell.h" />
     <ClInclude Include="..\..\include\fastpathfinder\point.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

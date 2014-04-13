@@ -21,12 +21,11 @@ namespace fastpathfinder
 		EPFS_HOPELESS
 	};
 	//////////////////////////////////////////////////////////////////////////
+	typedef array<point> point_array;
+	//////////////////////////////////////////////////////////////////////////
 	template<class TestWall = map_test_wall_2>
 	class pathfinder
 	{
-	public:
-		typedef array<point> point_array;
-
 	public:
 		pathfinder()
 			: m_map(nullptr)			
@@ -112,7 +111,7 @@ namespace fastpathfinder
 			m_walker_true.clear();
 			m_walker_false.clear();
 
-			m_walker_true.add( m_from );
+			m_walker_true.add( m_to );
 
 			m_walker_index = 0;
 
@@ -132,19 +131,17 @@ namespace fastpathfinder
 				}break;
 			case EPFS_BRESENHAM:
 				{
-					if( this->walkerBresenham( m_from, m_to ) == true )
+					if( this->walkerBresenham( m_to, m_from ) == true )
 					{
 						_found = true;
 						return true;
 					}
-
-					m_walker_index = m_walker_true.size();
-										
+									
 					m_state = EPFS_GREEDY;
 				}break;
 			case EPFS_GREEDY:
 				{
-					bool found;
+					bool found = false;
 					if( this->walkerGreedy( m_to, m_from, found ) == false )
 					{						
 						return false;
@@ -236,28 +233,38 @@ namespace fastpathfinder
 		{
 			return m_path_filter;
 		}
+
+		const point_array & getWalkerTrue() const
+		{
+			return m_walker_true;
+		}
 			
 	protected:
 		bool walkerGreedy( point _from, point _to, bool & _found )
 		{
-			size_t it_walker = m_walker_true.size();
+			size_t walker_true_size = m_walker_true.size();
 			
-			if( m_walker_true.size() == 0 )
+			if( walker_true_size == m_walker_index )
 			{
-				_found = false;
-				return true;
+				if( m_walker_false.size() == 0 )
+				{
+					_found = false;
+					return true;
+				}
+
+				point p = m_walker_false.pop();
+				m_walker_true.clear();
+				m_walker_true.add( p );
+				m_walker_index = 0;
+
+				//m_walker_true.swap( m_walker_false );
+				//m_walker_false.clear();
+				//m_walker_index = 0;
 			}
 			
-			size_t size = m_walker_true.size();
+			point test = m_walker_true[m_walker_index];
 
-			if( m_walker_index > size )
-			{
-				m_walker_index = size;
-			}
-
-			point next = m_walker_true[m_walker_index - 1];
-
-			if( this->walkerBresenham( next, _to ) == true )
+			if( this->walkerWave( test, _to ) == true )
 			{
 				_found = true;
 				return true;
@@ -273,57 +280,29 @@ namespace fastpathfinder
 			bresenham_line br;
 			s_make_bresenham_line( br, _from, _to );
 
-			pathfinder_cell * from_cell = this->getCell( _from );
-
-			uint32_t cost = from_cell->cost;
-
 			point prev = _from;
 			point next = s_next_bresenham_line_point( br, _from );
 
 			while( true, true )
 			{	
 				uint32_t angle = s_get_neighbour_point_angle( prev, next );
-
-				uint32_t next_cost = s_get_next_point_cost( prev, next );
-				uint32_t test_cell_cost = cost + next_cost;
-
-				pathfinder_cell * next_cell = this->getCell( next );
-				uint32_t next_cell_cost = next_cell->cost;
-
-				bool tw = TestWall(m_map, m_width, m_height)( prev, angle );
-
+		
 				uint32_t mask = this->getCellMask( next );
 
-				if( ( mask != 0 ) || 
-					( next_cell->revision == m_revision && next_cell_cost <= test_cell_cost ) ||
-					( tw == true ) )
+				if( mask != 0 )
 				{
-					uint32_t best_index = cell_best_angle_count[angle];
-
-					for( uint32_t i = 0; i != best_index; ++i )
-					{
-						if( this->nextWalkTrue( prev, cost, angle, i ) == true )
-						{
-							return false;
-						}
-					}
-
-					m_walker_true.pop();
-
 					return false;
 				}
-
-				next_cell->revision = m_revision;
-				next_cell->cost = test_cell_cost;
-
-				m_walker_true.add( next );
+								
+				if( TestWall(m_map, m_width, m_height)( prev, angle ) == true )
+				{
+					return false;
+				}
 
 				if( next.x == _to.x && next.y == _to.y )
 				{	
 					break;
 				}
-
-				cost = test_cell_cost;
 
 				prev = next;
 				next = s_next_bresenham_line_point( br, next );
@@ -332,16 +311,120 @@ namespace fastpathfinder
 			return true;
 		}
 
-		bool findProcces( point _from, point _to )
+		bool walkerPoint( point _p, uint32_t _cost, uint32_t _angle, point & _neighbour )
+		{
+			int32_t dx = cell_angle_to_deltha_x[_angle];
+			int32_t dy = cell_angle_to_deltha_y[_angle];
+
+			point neighbour(_p.x + dx, _p.y + dy);
+
+			if( neighbour.x >= m_width || neighbour.y >= m_height )
+			{
+				return false;
+			}
+
+			uint32_t mask = this->getCellMask( neighbour );				
+
+			if( mask != 0 )
+			{
+				return false;
+			}
+
+			uint32_t next_cost = cell_angle_to_cost[_angle];
+			uint32_t test_cell_cost = _cost + next_cost;
+
+			pathfinder_cell * neighbour_cell = this->getCell( neighbour );
+			uint32_t neighbour_cell_cost = neighbour_cell->cost;
+
+			if( neighbour_cell->revision == m_revision && neighbour_cell_cost <= test_cell_cost )
+			{
+				return false;
+			}
+
+			if( TestWall(m_map, m_width, m_height)( _p, _angle ) == true )
+			{
+				return false;
+			}
+
+			neighbour_cell->revision = m_revision;
+			neighbour_cell->cost = test_cell_cost;
+
+			_neighbour = neighbour;
+
+			return true;
+		}
+
+		bool walkerWave( point _p, point _to )
+		{
+			pathfinder_cell * cell = this->getCell( _p );
+
+			uint32_t angle = s_get_neighbour_point_angle( _p, _to );
+			
+			uint32_t cost = cell->cost;
+
+			point neighbour0;
+			if( walkerPoint( _p, cost, angle, neighbour0 ) == true )
+			{
+				if( neighbour0.x == _to.x && neighbour0.y == _to.y )
+				{	
+					return true;
+				}
+
+				m_walker_true.add( neighbour0 );
+			}
+
+			uint32_t best_angle_count = cell_best_angle_count[angle];
+
+			for( uint32_t i = 0; i != best_angle_count; ++i )
+			{
+				int32_t deltha_angle = cell_next_point_deltha[i];
+
+				uint32_t test_angle = (angle + 8 + deltha_angle) % 8;
+
+				point neighbour;
+				if( walkerPoint( _p, cost, test_angle, neighbour ) == true )
+				{
+					if( neighbour.x == _to.x && neighbour.y == _to.y )
+					{	
+						return true;
+					}
+
+					m_walker_true.add( neighbour );
+				}
+			}
+
+			for( uint32_t i = best_angle_count; i != 7; ++i )
+			{
+				int32_t deltha_angle = cell_next_point_deltha[i];
+
+				uint32_t test_angle = (angle + 8 + deltha_angle) % 8;
+
+				point neighbour;
+				if( walkerPoint( _p, cost, test_angle, neighbour ) == true )
+				{
+					if( neighbour.x == _to.x && neighbour.y == _to.y )
+					{	
+						return true;
+					}
+
+					m_walker_false.add( neighbour );
+				}
+			}
+			
+			return false;
+		}
+
+	public:
+		bool findProcces()
 		{
 			m_path.clear();
-			m_path.add( _from );
+			m_path.add( m_from );
 
 			while( true, true )
 			{	
 				point next = m_path.back();
 
-				if( next.x == _to.x && next.y == _to.y )
+				if( next.x == m_to.x && next.y == m_to.y )
 				{
 					return true;
 				}
@@ -355,6 +438,7 @@ namespace fastpathfinder
 			return false;
 		}
 
+	protected:
 		bool findAround( point _point )
 		{
 			pathfinder_cell * point_cell = this->getCell( _point );
@@ -417,10 +501,10 @@ namespace fastpathfinder
 
 				uint32_t angle = s_get_neighbour_point_angle( prev, next );
 
-				cell * c = this->getCell( next );
+				uint32_t mask = this->getCellMask( next );
 
-				if( ( c->block_mask == 0 ) &&
-					( TestWall(m_cells, m_width, m_height)( prev, angle ) == false ) )
+				if( ( mask == 0 ) &&
+					( TestWall(m_map, m_width, m_height)( prev, angle ) == false ) )
 				{
 					continue;
 				}
@@ -429,86 +513,6 @@ namespace fastpathfinder
 			}
 
 			return false;
-		}
-
-		bool nextWalkTrue( point _prev, uint32_t _cost, uint32_t _angle, uint32_t _index )
-		{
-			uint32_t next_angle = s_get_next_foreach_angle( _angle, _index );
-			point nearest = s_get_point_next_angle( _prev, next_angle );
-
-			if( nearest.x >= m_width || nearest.y >= m_height )
-			{
-				return false;
-			}
-
-			uint32_t nearest_cost = s_get_next_point_cost( _prev, nearest );
-			uint32_t setup_cell_cost = _cost + nearest_cost;
-			uint32_t test_cell_cost = setup_cell_cost + cell_line_cost * 2;
-			
-			uint32_t mask = this->getCellMask( nearest );
-
-			if( mask != 0 )
-			{
-				return false;
-			}
-
-			pathfinder_cell * nearest_cell = this->getCell( nearest );
-
-			if( nearest_cell->revision == m_revision && nearest_cell->cost <= test_cell_cost )
-			{
-				return false;
-			}
-
-			if( TestWall(m_map, m_width, m_height)( _prev, next_angle ) == true )
-			{
-				return false;
-			}
-
-			nearest_cell->revision = m_revision;
-			nearest_cell->cost = setup_cell_cost;
-
-			m_walker_true.add( nearest );
-
-			return true;
-		}
-
-		void nextWalkFalse( point _prev, uint32_t _weight, uint32_t _angle, uint32_t _index )
-		{
-			uint32_t next_angle = s_get_next_foreach_angle( _angle, _index );
-			point nearest = s_get_point_next_angle( _prev, next_angle );
-
-			if( nearest.x >= m_width || nearest.y >= m_height )
-			{
-				return;
-			}
-
-			uint32_t mask = this->getCellMask( nearest );
-			
-			if( mask != 0 )
-			{
-				return;
-			}
-
-			pathfinder_cell * nearest_cell = this->getCell( nearest );
-			
-			if( nearest_cell->revision == m_revision ) 
-			{
-				return;
-			}
-
-			if( TestWall(m_map, m_width, m_height)( _prev, next_angle ) == true )
-			{
-				return;
-			}
-
-			uint32_t nearest_cost = s_get_next_point_cost( _prev, nearest );
-			uint32_t setup_cell_cost = _weight + nearest_cost;
-			//uint32_t test_cell_weight = setup_cell_weight /*+ cell_weight_line * 2*/;
-
-			nearest_cell->revision = m_revision;
-			nearest_cell->cost = setup_cell_cost;
-
-			m_walker_false.add( nearest );
 		}
 		
 	public:

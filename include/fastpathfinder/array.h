@@ -43,9 +43,11 @@ namespace fastpathfinder
 			++m_current;
 		}
 
-		void pop()
+		value_type pop()
 		{
 			--m_current;
+
+			return m_buffer[m_current];
 		}
 
 		value_type back() const

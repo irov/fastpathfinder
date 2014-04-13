@@ -21,7 +21,9 @@ namespace fastpathfinder
 	static const uint32_t cell_matrix_to_angle[9] = {3, 2, 1, 4, 8, 0, 5, 6, 7};
 	static const uint32_t cell_angle_to_matrix[9] = {5, 2, 1, 0, 3, 6, 7, 8, 4};
 	static const bool cell_angle_to_test_wall[9] = {false, true, false, true, false, true, false, true, false};
-	static const uint32_t cell_best_angle_count[8] = {2, 2, 2, 2, 2, 2, 2, 2};
+	static const uint32_t cell_best_angle_line = 2;
+	static const uint32_t cell_best_angle_diagonal = 2;
+	static const uint32_t cell_best_angle_count[8] = {cell_best_angle_diagonal, cell_best_angle_line, cell_best_angle_diagonal, cell_best_angle_line, cell_best_angle_diagonal, cell_best_angle_line, cell_best_angle_diagonal, cell_best_angle_line};
 	//////////////////////////////////////////////////////////////////////////
 	struct bresenham_line
 	{

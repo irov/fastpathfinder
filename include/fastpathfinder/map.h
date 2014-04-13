@@ -58,8 +58,8 @@ namespace fastpathfinder
 				return false;
 			}
 
-			point point(_x, _y);
-			map_cell * c = this->getCell( point );
+			point p(_x, _y);
+			map_cell * c = this->getCell( p );
 
 			c->block_mask = _mask;
 
@@ -73,8 +73,8 @@ namespace fastpathfinder
 				return false;
 			}
 
-			point point(_x, _y);
-			map_cell * c = this->getCell( point );
+			point p(_x, _y);
+			map_cell * c = this->getCell( p );
 
 			uint32_t mask = c->block_mask;
 
@@ -91,8 +91,8 @@ namespace fastpathfinder
 				return false;
 			}
 
-			point point(_x, _y);
-			map_cell * c = this->getCell( point );
+			point p(_x, _y);
+			map_cell * c = this->getCell( p );
 
 			c->block_weight = _weight;
 
@@ -106,8 +106,8 @@ namespace fastpathfinder
 				return false;
 			}
 
-			point point(_x, _y);
-			map_cell * c = this->getCell( point );
+			point p(_x, _y);
+			map_cell * c = this->getCell( p );
 
 			uint32_t weight = c->block_weight;
 
