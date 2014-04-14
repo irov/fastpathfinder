@@ -25,7 +25,7 @@ namespace fastpathfinder
 	//////////////////////////////////////////////////////////////////////////
 	template<class TestWall = map_test_wall_2>
 	class pathfinder
-	{
+ 	{
 	public:
 		pathfinder()
 			: m_map(nullptr)			
@@ -446,6 +446,7 @@ namespace fastpathfinder
 
 			point p = _point;
 
+			bool successful = false;
 			for( uint32_t i = 0; i != 8; ++i )
 			{
 				int32_t dx = cell_angle_to_deltha_x[i];
@@ -480,7 +481,13 @@ namespace fastpathfinder
 				}
 
 				p = next;
-				cost = next_cell->cost;				
+				cost = next_cell->cost;
+				successful = true;
+			}
+
+			if( successful == false )
+			{
+				return false;
 			}
 
 			m_path.add( p );

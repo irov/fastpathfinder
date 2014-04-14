@@ -75,17 +75,90 @@ static void print_walk( fastpathfinder::map & m, fastpathfinder::pathfinder<> & 
 		printf("\n");
 	}
 }
+//////////////////////////////////////////////////////////////////////////
+static bool is_path( const fastpathfinder::point_array & _path, size_t _i, size_t _j )
+{
+	for( size_t k = 0; k != _path.size(); ++k )
+	{
+		fastpathfinder::point p = _path[k];
+
+		if( p.x == _i && p.y == _j )
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+//////////////////////////////////////////////////////////////////////////
+static void print_path( fastpathfinder::map & m, fastpathfinder::pathfinder<> & pf, size_t _bx, size_t _by, size_t _ex, size_t _ey )
+{
+	uint32_t revision = pf.getRevision();
+	for( size_t j = _by; j != _ey; ++j )
+	{
+		for( size_t i = _bx; i != _ex; ++i )
+		{
+			uint32_t mask;
+			if( m.getCellMask( i, j, mask ) == false )
+			{
+				continue;
+			}
+
+			const fastpathfinder::point_array & path = pf.getPath();
+			const fastpathfinder::point_array & path_filter = pf.getPathFilter();
+
+			if( mask > 0 )
+			{
+				printf("#");
+			}
+			else if( is_path( path_filter, i, j ) == true )
+			{				
+				printf("+");
+
+			}
+			else if( is_path( path, i, j ) == true )
+			{				
+				printf("o");
+			
+			}
+			else
+			{
+				fastpathfinder::point p(i, j);
+				fastpathfinder::pathfinder_cell * c = pf.getCell( p );
+
+				const fastpathfinder::point_array & wa = pf.getWalkerTrue();
+
+				fastpathfinder::point lp = wa.back();
+
+				if( lp.x == i && lp.y == j )
+				{
+					printf("@");
+				}
+				else if( c->revision == revision )
+				{
+					printf("*");
+				}
+				else
+				{
+					printf(".");
+				}				
+			}
+		}
+
+		printf("\n");
+	}
+}
 
 bool test( fastpathfinder::map & m )
 {
-	srand(2);
+	//srand(1);
 
 	uint32_t width = m.getWidth();
 	uint32_t height = m.getHeight();
 
 	m.clear();
 
-	size_t count = width * height * 0.3f;
+	size_t count = width * height * 0.2f;
 	for( size_t i = 0; i != count; ++i )
 	{
 		size_t x = rand() % width;
@@ -126,14 +199,27 @@ bool test( fastpathfinder::map & m )
 		//printf("!");
 	}
 
-	system("CLS");
-	print_walk( m, pf, 0, 0, width, height );
+	if( found == false )
+	{
+		return false;
+	}
+
+	//system("CLS");
+	//print_walk( m, pf, 0, 0, width, height );
 
 	//if( found == true )
-	{
-		bool s = pf.findProcces();
+	bool s = pf.findProcces();
 
+	if( s == false )
+	{
+		return false;
 	}
+
+	pf.findFilter();
+
+	system("CLS");
+	print_path( m, pf, 0, 0, width, height );
+	//}
 		
 	return found;
 }
