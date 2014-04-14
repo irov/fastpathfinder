@@ -35,6 +35,8 @@ namespace fastpathfinder
 			, m_state(EPFS_INITIALIZE)
 			, m_walker_index(0)
 			, m_cells(nullptr)
+			, m_pathFound(false)
+			, m_pathFiltred(false)
 		{
 		}
 
@@ -114,6 +116,8 @@ namespace fastpathfinder
 			m_walker_true.add( m_to );
 
 			m_walker_index = 0;
+			m_pathFound = false;
+			m_pathFiltred = false;
 
 			m_state = EPFS_BRESENHAM;
 
@@ -133,6 +137,19 @@ namespace fastpathfinder
 				{
 					if( this->walkerBresenham( m_to, m_from ) == true )
 					{
+						m_walker_true.add( m_from );
+
+						m_path.clear();
+						m_path.add( m_from );
+						m_path.add( m_to );
+
+						m_path_filter.clear();
+						m_path_filter.add( m_from );
+						m_path_filter.add( m_to );
+
+						m_pathFound = true;
+						m_pathFiltred = true;
+
 						_found = true;
 						return true;
 					}
@@ -142,7 +159,7 @@ namespace fastpathfinder
 			case EPFS_GREEDY:
 				{
 					bool found = false;
-					if( this->walkerGreedy( m_to, m_from, found ) == false )
+					if( this->walkerGreedy( m_from, found ) == false )
 					{						
 						return false;
 					}
@@ -167,6 +184,13 @@ namespace fastpathfinder
 
 		void findFilter()
 		{
+			if( m_pathFiltred == true )
+			{
+				return;
+			}
+
+			m_pathFiltred = true;
+
 			size_t size = m_path.size();
 
 			if( size < 2 )
@@ -233,14 +257,9 @@ namespace fastpathfinder
 		{
 			return m_path_filter;
 		}
-
-		const point_array & getWalkerTrue() const
-		{
-			return m_walker_true;
-		}
 			
 	protected:
-		bool walkerGreedy( point _from, point _to, bool & _found )
+		bool walkerGreedy( point _to, bool & _found )
 		{
 			size_t walker_true_size = m_walker_true.size();
 			
@@ -358,7 +377,7 @@ namespace fastpathfinder
 		{
 			pathfinder_cell * cell = this->getCell( _p );
 
-			uint32_t angle = s_get_neighbour_point_angle( _p, _to );
+			uint32_t angle = s_get_point_angle( _p, _to );
 			
 			uint32_t cost = cell->cost;
 
@@ -417,6 +436,13 @@ namespace fastpathfinder
 	public:
 		bool findProcces()
 		{
+			if( m_pathFound == true )
+			{
+				return true;
+			}
+
+			m_pathFound = true;
+
 			m_path.clear();
 			m_path.add( m_from );
 
@@ -541,5 +567,8 @@ namespace fastpathfinder
 		point_array m_walker_false;
 		point_array m_path;
 		point_array m_path_filter;
+
+		bool m_pathFound;
+		bool m_pathFiltred;
 	};
 }

@@ -53,15 +53,7 @@ static void print_walk( fastpathfinder::map & m, fastpathfinder::pathfinder<> & 
 				fastpathfinder::point p(i, j);
 				fastpathfinder::pathfinder_cell * c = pf.getCell( p );
 
-				const fastpathfinder::point_array & wa = pf.getWalkerTrue();
-
-				fastpathfinder::point lp = wa.back();
-
-				if( lp.x == i && lp.y == j )
-				{
-					printf("@");
-				}
-				else if( c->revision == revision )
+				if( c->revision == revision )
 				{
 					printf("*");
 				}
@@ -125,16 +117,8 @@ static void print_path( fastpathfinder::map & m, fastpathfinder::pathfinder<> & 
 			{
 				fastpathfinder::point p(i, j);
 				fastpathfinder::pathfinder_cell * c = pf.getCell( p );
-
-				const fastpathfinder::point_array & wa = pf.getWalkerTrue();
-
-				fastpathfinder::point lp = wa.back();
-
-				if( lp.x == i && lp.y == j )
-				{
-					printf("@");
-				}
-				else if( c->revision == revision )
+				
+				if( c->revision == revision )
 				{
 					printf("*");
 				}
@@ -158,11 +142,11 @@ bool test( fastpathfinder::map & m )
 
 	m.clear();
 
-	size_t count = width * height * 0.2f;
+	size_t count = width * height * 0.6f;
 	for( size_t i = 0; i != count; ++i )
 	{
-		size_t x = rand() % width;
-		size_t y = rand() % height;
+		size_t x = 20 + rand() % (width - 30);
+		size_t y = 20 + rand() % (height - 30);
 
 		m.setCellMask( x, y, 1 );
 	}
