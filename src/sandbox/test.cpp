@@ -121,15 +121,19 @@ bool test( fastpathfinder::map & m )
 	bool found;
 	while( pf.findPathNext( found ) == false )
 	{
-		system("CLS");
-		print_walk( m, pf, 0, 0, width, height );
-		printf("!");
+		//system("CLS");
+		//print_walk( m, pf, 0, 0, width, height );
+		//printf("!");
 	}
 
 	system("CLS");
 	print_walk( m, pf, 0, 0, width, height );
 
-	bool s = pf.findProcces();
+	//if( found == true )
+	{
+		bool s = pf.findProcces();
+
+	}
 		
 	return found;
 }
@@ -138,8 +142,8 @@ void test1()
 {
 	fastpathfinder::map m;
 
-	size_t width = 60;
-	size_t height = 20;
+	size_t width = 70;
+	size_t height = 70;
 
 	m.initialize( width, height );
 
