@@ -109,7 +109,7 @@ namespace fastpathfinder
 			point p(_x, _y);
 			map_cell * c = this->getCell( p );
 
-			uint32_t weight = c->block_weight;
+			uint8_t weight = c->block_weight;
 
 			_weight = weight; 
 

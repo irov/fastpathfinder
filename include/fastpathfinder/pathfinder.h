@@ -1,14 +1,15 @@
 #	pragma once
 
-#	include <stdint.h>
-#	include <memory.h>
-
 #	include "fastpathfinder/point.h"
-#	include "fastpathfinder/array.h"
 #	include "fastpathfinder/map.h"
 #	include "fastpathfinder/map_test_wall.h"
 #	include "fastpathfinder/pathfinder_cell.h"
 #	include "fastpathfinder/helper.h"
+
+#	include <stdint.h>
+#	include <memory.h>
+
+#	include <vector>
 
 namespace fastpathfinder
 {
@@ -21,7 +22,7 @@ namespace fastpathfinder
 		EPFS_HOPELESS
 	};
 	//////////////////////////////////////////////////////////////////////////
-	typedef array<point> point_array;
+	typedef std::vector<point> point_array;
 	//////////////////////////////////////////////////////////////////////////
 	template<class TestWall = map_test_wall_2>
 	class pathfinder
@@ -57,10 +58,10 @@ namespace fastpathfinder
 
 			m_cells = new pathfinder_cell[sq_map];
 			
-			m_walker_true.initialize( sq_map * 2);
-			m_walker_false.initialize( sq_map * 2);
-			m_path.initialize( sq_map );
-			m_path_filter.initialize( sq_map );
+			m_walker_true.reserve( sq_map * 2);
+			m_walker_false.reserve( sq_map * 2);
+			m_path.reserve( sq_map );
+			m_path_filter.reserve( sq_map );
 
 			return true;
 		}
@@ -90,6 +91,16 @@ namespace fastpathfinder
 	public:
 		bool findPathFirst( uint32_t _fromX, uint32_t _fromY, uint32_t _toX, uint32_t _toY )
 		{
+			if( _fromX >= m_width || _fromY >= m_height )
+			{
+				return false;
+			}
+
+			if( _toX >= m_width || _toY >= m_height )
+			{
+				return false;
+			}
+
 			m_from = point(_fromX, _fromY);
 			m_to = point(_toX, _toY);
 
@@ -113,7 +124,7 @@ namespace fastpathfinder
 			m_walker_true.clear();
 			m_walker_false.clear();
 
-			m_walker_true.add( m_to );
+			m_walker_true.push_back( m_to );
 
 			m_walker_index = 0;
 			m_pathFound = false;
@@ -137,15 +148,15 @@ namespace fastpathfinder
 				{
 					if( this->walkerBresenham( m_to, m_from ) == true )
 					{
-						m_walker_true.add( m_from );
+						m_walker_true.push_back( m_from );
 
 						m_path.clear();
-						m_path.add( m_from );
-						m_path.add( m_to );
+						m_path.push_back( m_from );
+						m_path.push_back( m_to );
 
 						m_path_filter.clear();
-						m_path_filter.add( m_from );
-						m_path_filter.add( m_to );
+						m_path_filter.push_back( m_from );
+						m_path_filter.push_back( m_to );
 
 						m_pathFound = true;
 						m_pathFiltred = true;
@@ -203,15 +214,15 @@ namespace fastpathfinder
 				point p0 = m_path[0];
 				point p1 = m_path[1];
 
-				m_path_filter.add( p0 );
-				m_path_filter.add( p1 );
+				m_path_filter.push_back( p0 );
+				m_path_filter.push_back( p1 );
 
 				return;
 			}
 
 			point p0 = m_path[0];
 			m_path_filter.clear();
-			m_path_filter.add( p0 );
+			m_path_filter.push_back( p0 );
 
 			for( size_t 
 				it = 0,
@@ -241,7 +252,7 @@ namespace fastpathfinder
 					it2 = it_next;
 				}
 
-				m_path_filter.add( p2 );
+				m_path_filter.push_back( p2 );
 
 				it = it2;
 			}
@@ -271,9 +282,12 @@ namespace fastpathfinder
 					return true;
 				}
 
-				point p = m_walker_false.pop();
+				point p = m_walker_false.back();
+				m_walker_false.pop_back();
+
 				m_walker_true.clear();
-				m_walker_true.add( p );
+				m_walker_true.push_back( p );
+
 				m_walker_index = 0;
 
 				//m_walker_true.swap( m_walker_false );
@@ -389,7 +403,7 @@ namespace fastpathfinder
 					return true;
 				}
 
-				m_walker_true.add( neighbour0 );
+				m_walker_true.push_back( neighbour0 );
 			}
 
 			uint32_t best_angle_count = cell_best_angle_count[angle];
@@ -408,7 +422,7 @@ namespace fastpathfinder
 						return true;
 					}
 
-					m_walker_true.add( neighbour );
+					m_walker_true.push_back( neighbour );
 				}
 			}
 
@@ -426,7 +440,7 @@ namespace fastpathfinder
 						return true;
 					}
 
-					m_walker_false.add( neighbour );
+					m_walker_false.push_back( neighbour );
 				}
 			}
 			
@@ -444,7 +458,7 @@ namespace fastpathfinder
 			m_pathFound = true;
 
 			m_path.clear();
-			m_path.add( m_from );
+			m_path.push_back( m_from );
 
 			while( true, true )
 			{	
@@ -516,7 +530,7 @@ namespace fastpathfinder
 				return false;
 			}
 
-			m_path.add( p );
+			m_path.push_back( p );
 
 			return true;
 		}
