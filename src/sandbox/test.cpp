@@ -1,5 +1,6 @@
 #	include "fastpathfinder/map.h"
 #	include "fastpathfinder/pathfinder.h"
+#	include "fastpathfinder/graph.h"
 
 #	include "stdlib.h"
 #	include "stdio.h"
@@ -231,7 +232,80 @@ void test1()
 		system("CLS");
 	}
 }
+
+struct node
+	: public fastpathfinder::graph_node
+{
+	node( uint32_t _index )
+		: index(_index)
+	{
+	}
+
+	uint32_t index;
+};
+
+void test2()
+{
+	fastpathfinder::graph g;
+
+	node gn0(0);
+	node gn1(1);
+	node gn2(2);
+	node gn3(3);
+	node gn4(4);
+	node gn5(5);
+	node gn6(6);
+	node gn7(7);
+	node gn8(8);
+	node gn9(9);
+
+
+	g.addNode( &gn0 );
+	g.addNode( &gn1 );
+	g.addNode( &gn2 );
+	g.addNode( &gn3 );
+	g.addNode( &gn4 );
+	g.addNode( &gn5 );
+	g.addNode( &gn6 );
+	g.addNode( &gn7 );
+	g.addNode( &gn8 );
+	g.addNode( &gn9 );
+
+	g.addEdge2( &gn0, &gn6, 2 );
+	g.addEdge2( &gn0, &gn7, 2 );
+	g.addEdge2( &gn6, &gn3, 1 );
+	g.addEdge2( &gn3, &gn2, 1 );
+	g.addEdge2( &gn0, &gn1, 2 );
+	g.addEdge2( &gn7, &gn1, 1 );
+	g.addEdge2( &gn1, &gn2, 1 );
+	g.addEdge2( &gn1, &gn9, 3 );
+	g.addEdge2( &gn9, &gn5, 3 );
+	g.addEdge2( &gn5, &gn8, 2 );
+	g.addEdge2( &gn4, &gn8, 2 );
+	g.addEdge2( &gn4, &gn5, 2 );
+	g.addEdge2( &gn2, &gn4, 2 );
+
+	g.blockNode( &gn2, true );
+
+	fastpathfinder::vector_graph_node path;
+	g.getPath( &gn8, &gn7, path );
+
+	for( fastpathfinder::vector_graph_node::iterator
+		it = path.begin(),
+		it_end= path.end();
+	it != it_end;
+	++it )
+	{
+		node * n = (node *)*it;
+
+		printf("%d\n"
+			, n->index 
+			);
+	}
+}
+
 void main()
 {
-	test1();
+	//test1();
+	test2();
 }

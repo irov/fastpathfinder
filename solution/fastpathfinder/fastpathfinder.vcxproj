@@ -75,7 +75,7 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\fastpathfinder\array.h" />
+    <ClInclude Include="..\..\include\fastpathfinder\graph.h" />
     <ClInclude Include="..\..\include\fastpathfinder\helper.h" />
     <ClInclude Include="..\..\include\fastpathfinder\map.h" />
     <ClInclude Include="..\..\include\fastpathfinder\map_cell.h" />
