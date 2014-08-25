@@ -1,5 +1,7 @@
 #	pragma once
 
+#	include <stdex/stl_vector.h>
+
 namespace fastpathfinder
 {	
 	struct graph_edge
@@ -8,7 +10,7 @@ namespace fastpathfinder
 		uint32_t weight;
 	};
 
-	typedef std::vector<graph_edge> vector_graph_edge;
+	typedef stdex::vector<graph_edge> vector_graph_edge;
 
 	struct graph_node
 	{		 
@@ -18,7 +20,7 @@ namespace fastpathfinder
 		uint32_t weight;
 	};
 
-	typedef std::vector<graph_node *> vector_graph_node;
+	typedef stdex::vector<graph_node *> vector_graph_node;
 
 	class graph
 	{

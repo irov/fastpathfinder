@@ -6,6 +6,8 @@
 #	include "stdio.h"
 #	include "time.h"
 
+#	include <map>
+
 static void print_map( fastpathfinder::map & m, size_t _bx, size_t _by, size_t _ex, size_t _ey )
 {
 	for( size_t j = _by; j != _ey; ++j )
@@ -246,6 +248,69 @@ struct node
 
 void test2()
 {
+	struct key
+	{
+		int i;
+		int j;
+		int k;
+	};
+
+	struct k_less
+	{
+		bool operator() ( key _l, key _r )
+		{
+			if( _l.i < _r.i )
+			{
+				return true;
+			}
+
+			if( _l.j < _r.j )
+			{
+				return true;
+			}
+
+			if( _l.k < _r.k )
+			{
+				return true;
+			}
+
+			return false;
+		}
+	};
+
+	typedef std::map<key, int, k_less> M; 
+	M m;
+
+	key k0;
+	k0.i = 1;
+	k0.j = 2;
+	k0.k = 3;
+
+	m[k0] = 1;
+
+	key k1;
+	k1.i = -1;
+	k1.j = -2;
+	k1.k = -3;
+
+	m[k1] = 2;
+
+	m[k0] = 3;
+
+	m[k1] = 4;
+
+	key k2;
+	k2.i = 1;
+	k2.j = 2;
+	k2.k = 2;
+
+	m[k2] = 5;
+
+	if( true & false )
+	{
+		printf("11");
+	}
+
 	fastpathfinder::graph g;
 
 	node gn0(0);

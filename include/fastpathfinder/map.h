@@ -1,9 +1,11 @@
 #	pragma once
 
+#	include "fastpathfinder/config.h"
 #	include "fastpathfinder/point.h"
 #	include "fastpathfinder/map_cell.h"
 
 #	include <memory.h>
+#	include <new>
 
 namespace fastpathfinder
 {
@@ -20,7 +22,12 @@ namespace fastpathfinder
 
 		~map()
 		{
-			delete [] m_cells;
+			for( uint32_t i = 0; i != m_height; ++i )
+			{
+				FASTPATHFINDER_FREE(m_cells[i], sizeof(map_cell) * m_width);
+			}
+
+			FASTPATHFINDER_FREE(m_cells, sizeof(map_cell *) * m_height);
 		}
 
 	public:
@@ -29,14 +36,24 @@ namespace fastpathfinder
 			m_width = _width;
 			m_height = _height;
 
-			m_cells = new map_cell[m_width * m_height];
+			m_cells = (map_cell **)FASTPATHFINDER_MALLOC(sizeof(map_cell *) * m_height);
+			
+			for( uint32_t i = 0; i != m_height; ++i )
+			{
+				m_cells[i] = (map_cell *)FASTPATHFINDER_MALLOC(sizeof(map_cell) * m_width);
+			}
+			
+			this->clear();
 
 			return true;
 		}
 
 		void clear()
 		{
-			memset( m_cells, 0, m_width * m_height * sizeof(m_cells[0]) );
+			for( size_t i = 0; i != m_height; ++i )
+			{
+				new (m_cells[i]) map_cell[m_width];
+			}
 		}
 
 	public:
@@ -119,8 +136,7 @@ namespace fastpathfinder
 	public:
 		map_cell * getCell( point _point ) const
 		{
-			uint32_t index = _point.x + _point.y * m_width;
-			map_cell * c = m_cells + index;
+			map_cell * c = m_cells[_point.y] + _point.x;
 
 			return c;
 		}
@@ -128,6 +144,6 @@ namespace fastpathfinder
 	protected:
 		size_t m_width;
 		size_t m_height;
-		map_cell * m_cells;
+		map_cell ** m_cells;
 	};
 }

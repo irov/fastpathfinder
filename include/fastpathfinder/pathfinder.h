@@ -1,5 +1,6 @@
 #	pragma once
 
+#	include "fastpathfinder/config.h"
 #	include "fastpathfinder/point.h"
 #	include "fastpathfinder/map.h"
 #	include "fastpathfinder/map_test_wall.h"
@@ -9,7 +10,8 @@
 #	include <stdint.h>
 #	include <memory.h>
 
-#	include <vector>
+#	include <stdex/stl_vector.h>
+#	include <stdex/stl_list.h>
 
 namespace fastpathfinder
 {
@@ -22,7 +24,9 @@ namespace fastpathfinder
 		EPFS_HOPELESS
 	};
 	//////////////////////////////////////////////////////////////////////////
-	typedef std::vector<point> point_array;
+	typedef stdex::vector<point> point_array;
+	//////////////////////////////////////////////////////////////////////////
+	typedef stdex::list<point> point_list;
 	//////////////////////////////////////////////////////////////////////////
 	template<class TestWall = map_test_wall_2>
 	class pathfinder
@@ -32,9 +36,7 @@ namespace fastpathfinder
 			: m_map(nullptr)			
 			, m_width(0)
 			, m_height(0)
-			, m_revision(0)
 			, m_state(EPFS_INITIALIZE)
-			, m_walker_index(0)
 			, m_cells(nullptr)
 			, m_pathFound(false)
 			, m_pathFiltred(false)
@@ -43,7 +45,12 @@ namespace fastpathfinder
 
 		~pathfinder()
 		{
-			delete [] m_cells;
+			for( uint32_t i = 0; i != m_height; ++i )
+			{
+				FASTPATHFINDER_FREE(m_cells[i], sizeof(pathfinder_cell) * m_width);
+			}
+
+			FASTPATHFINDER_FREE(m_cells, sizeof(pathfinder_cell *) * m_height);
 		}
 
 	public:
@@ -54,29 +61,20 @@ namespace fastpathfinder
 			m_width = m_map->getWidth();
 			m_height = m_map->getHeight();
 
-			uint32_t sq_map = m_width * m_height;
+			m_cells = (pathfinder_cell **)FASTPATHFINDER_MALLOC(sizeof(pathfinder_cell *) * m_height);
 
-			m_cells = new pathfinder_cell[sq_map];
-			
-			m_walker_true.reserve( sq_map * 2);
-			m_walker_false.reserve( sq_map * 2);
-			m_path.reserve( sq_map );
-			m_path_filter.reserve( sq_map );
+			for( uint32_t i = 0; i != m_height; ++i )
+			{
+				m_cells[i] = (pathfinder_cell *)FASTPATHFINDER_MALLOC(sizeof(pathfinder_cell) * m_width);
+			}
 
 			return true;
 		}
 		
 	public:
-		uint32_t getRevision() const
-		{
-			return m_revision;
-		}
-
-	public:
 		pathfinder_cell * getCell( point _point ) const
 		{
-			uint32_t index = _point.x + _point.y * m_width;
-			pathfinder_cell * c = m_cells + index;
+			pathfinder_cell * c = m_cells[_point.y] + _point.x;
 
 			return c;
 		}
@@ -113,12 +111,17 @@ namespace fastpathfinder
 			{
 				return false;
 			}
-
-			++m_revision;
-
+						
+			for( uint32_t j = 0; j != m_height; ++j )
+			{
+				for( uint32_t i = 0; i != m_width; ++i )
+				{
+					m_cells[j][i].cost = (uint32_t)-1; 
+				}
+			}
+			
 			pathfinder_cell * toCell = this->getCell( m_to );
 
-			toCell->revision = m_revision;
 			toCell->cost = 0;
 
 			m_walker_true.clear();
@@ -126,7 +129,7 @@ namespace fastpathfinder
 
 			m_walker_true.push_back( m_to );
 
-			m_walker_index = 0;
+			m_walker_index = m_walker_true.begin();
 			m_pathFound = false;
 			m_pathFiltred = false;
 
@@ -209,6 +212,8 @@ namespace fastpathfinder
 				return;
 			}
 
+			m_path_filter.reserve(size);
+
 			if( size == 2 )
 			{
 				point p0 = m_path[0];
@@ -272,11 +277,9 @@ namespace fastpathfinder
 	protected:
 		bool walkerGreedy( point _to, bool & _found )
 		{
-			size_t walker_true_size = m_walker_true.size();
-			
-			if( walker_true_size == m_walker_index )
+			if( m_walker_index == m_walker_true.end() )
 			{
-				if( m_walker_false.size() == 0 )
+				if( m_walker_false.empty() == true )
 				{
 					_found = false;
 					return true;
@@ -288,14 +291,14 @@ namespace fastpathfinder
 				m_walker_true.clear();
 				m_walker_true.push_back( p );
 
-				m_walker_index = 0;
+				m_walker_index = m_walker_true.begin();
 
 				//m_walker_true.swap( m_walker_false );
 				//m_walker_false.clear();
 				//m_walker_index = 0;
 			}
 			
-			point test = m_walker_true[m_walker_index];
+			point test = *m_walker_index;
 
 			if( this->walkerWave( test, _to ) == true )
 			{
@@ -369,7 +372,7 @@ namespace fastpathfinder
 			pathfinder_cell * neighbour_cell = this->getCell( neighbour );
 			uint32_t neighbour_cell_cost = neighbour_cell->cost;
 
-			if( neighbour_cell->revision == m_revision && neighbour_cell_cost <= test_cell_cost )
+			if( neighbour_cell_cost <= test_cell_cost )
 			{
 				return false;
 			}
@@ -379,7 +382,6 @@ namespace fastpathfinder
 				return false;
 			}
 
-			neighbour_cell->revision = m_revision;
 			neighbour_cell->cost = test_cell_cost;
 
 			_neighbour = neighbour;
@@ -458,6 +460,12 @@ namespace fastpathfinder
 			m_pathFound = true;
 
 			m_path.clear();
+			
+			uint32_t lx = m_to.x > m_from.x ? m_to.x - m_from.x : m_from.x > m_to.x;
+			uint32_t ly = m_to.y > m_from.y ? m_to.y - m_from.y : m_from.y > m_to.y;
+
+			m_path.reserve( lx + ly );
+
 			m_path.push_back( m_from );
 
 			while( true, true )
@@ -502,11 +510,6 @@ namespace fastpathfinder
 				}
 
 				pathfinder_cell * next_cell = this->getCell( next );
-
-				if( next_cell->revision != m_revision )
-				{
-					continue;
-				}
 
 				if( cost < next_cell->cost )
 				{
@@ -571,14 +574,14 @@ namespace fastpathfinder
 		point m_from;
 		point m_to;
 		
-		uint32_t m_revision;
 		EPathFinderState m_state;
-		uint32_t m_walker_index;
+		
+		pathfinder_cell ** m_cells;
 
-		pathfinder_cell * m_cells;
-
-		point_array m_walker_true;
-		point_array m_walker_false;
+		point_list m_walker_true;
+		point_list m_walker_false;
+		point_list::iterator m_walker_index;
+		
 		point_array m_path;
 		point_array m_path_filter;
 
