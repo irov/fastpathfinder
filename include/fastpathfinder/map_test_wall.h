@@ -12,7 +12,7 @@ namespace fastpathfinder
 	class map_test_wall_2
 	{
 	public:
-		map_test_wall_2( const map * _map, uint32_t _width, uint32_t _height )
+		map_test_wall_2( const map * _map, uint16_t _width, uint16_t _height )
 			: m_map(_map)
 			, m_width(_width)
 			, m_height(_height)
@@ -54,14 +54,14 @@ namespace fastpathfinder
 
 	protected:
 		const map * m_map;
-		uint32_t m_width;
-		uint32_t m_height;
+		uint16_t m_width;
+		uint16_t m_height;
 	};
 	//////////////////////////////////////////////////////////////////////////
 	class map_test_wall_1
 	{
 	public:
-		map_test_wall_1( const map * _map, uint32_t _width, uint32_t _height )
+		map_test_wall_1( const map * _map, uint16_t _width, uint16_t _height )
 			: m_map(_map)
 			, m_width(_width)
 			, m_height(_height)
@@ -69,7 +69,7 @@ namespace fastpathfinder
 		}
 
 	public:
-		bool operator() ( point _point, uint32_t _angle ) const
+		bool operator() ( point _point, uint16_t _angle ) const
 		{
 			bool test_wall = cell_angle_to_test_wall[_angle];
 
@@ -116,7 +116,7 @@ namespace fastpathfinder
 	class map_test_wall_none
 	{
 	public:
-		map_test_wall_none( const map * _map, uint32_t _width, uint32_t _height )
+		map_test_wall_none( const map * _map, uint16_t _width, uint16_t _height )
 		{
 			(void)_map;
 			(void)_width;

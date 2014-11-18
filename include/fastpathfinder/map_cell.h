@@ -5,17 +5,11 @@
 namespace fastpathfinder
 {
 	//////////////////////////////////////////////////////////////////////////
+#	pragma pack(push, 1)
 	struct map_cell
 	{
-	public:
-		map_cell()
-			: block_mask(0)
-			, block_weight(1)
-		{
-		}
-
-	public:
-		uint32_t block_mask;
+		uint8_t block_mask;
 		uint8_t block_weight;
 	};
+#	pragma pack(pop)
 }

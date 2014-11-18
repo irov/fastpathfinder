@@ -1,3 +1,14 @@
+#	include "malloc.h"
+
+#	define FASTPATHFINDER_MALLOC(S) malloc(S)
+#	define FASTPATHFINDER_FREE(B, S) free(B)
+
+#	include <vector>
+#	define FASTPATHFINDER_VECTOR std::vector
+
+#	include <list>
+#	define FASTPATHFINDER_LIST std::vector
+
 #	include "fastpathfinder/map.h"
 #	include "fastpathfinder/pathfinder.h"
 #	include "fastpathfinder/graph.h"
@@ -14,7 +25,7 @@ static void print_map( fastpathfinder::map & m, size_t _bx, size_t _by, size_t _
 	{
 		for( size_t i = _bx; i != _ex; ++i )
 		{
-			uint32_t mask;
+			uint8_t mask;
 			if( m.getCellMask( i, j, mask ) == false )
 			{
 				continue;
@@ -36,12 +47,11 @@ static void print_map( fastpathfinder::map & m, size_t _bx, size_t _by, size_t _
 //////////////////////////////////////////////////////////////////////////
 static void print_walk( fastpathfinder::map & m, fastpathfinder::pathfinder<> & pf, size_t _bx, size_t _by, size_t _ex, size_t _ey )
 {
-	uint32_t revision = pf.getRevision();
 	for( size_t j = _by; j != _ey; ++j )
 	{
 		for( size_t i = _bx; i != _ex; ++i )
 		{
-			uint32_t mask;
+			uint8_t mask;
 			if( m.getCellMask( i, j, mask ) == false )
 			{
 				continue;
@@ -56,14 +66,7 @@ static void print_walk( fastpathfinder::map & m, fastpathfinder::pathfinder<> & 
 				fastpathfinder::point p(i, j);
 				fastpathfinder::pathfinder_cell * c = pf.getCell( p );
 
-				if( c->revision == revision )
-				{
-					printf("*");
-				}
-				else
-				{
-					printf(".");
-				}				
+				printf("*");			
 			}
 		}
 
@@ -88,18 +91,17 @@ static bool is_path( const fastpathfinder::point_array & _path, size_t _i, size_
 //////////////////////////////////////////////////////////////////////////
 static void print_path( fastpathfinder::map & m, fastpathfinder::pathfinder<> & pf, size_t _bx, size_t _by, size_t _ex, size_t _ey )
 {
-	uint32_t revision = pf.getRevision();
 	for( size_t j = _by; j != _ey; ++j )
 	{
 		for( size_t i = _bx; i != _ex; ++i )
 		{
-			uint32_t mask;
+			uint8_t mask;
 			if( m.getCellMask( i, j, mask ) == false )
 			{
 				continue;
 			}
 
-			const fastpathfinder::point_array & path = pf.getPath();
+			//const fastpathfinder::point_array & path = pf.getPath();
 			const fastpathfinder::point_array & path_filter = pf.getPathFilter();
 
 			if( mask > 0 )
@@ -107,11 +109,6 @@ static void print_path( fastpathfinder::map & m, fastpathfinder::pathfinder<> & 
 				printf("#");
 			}
 			else if( is_path( path_filter, i, j ) == true )
-			{				
-				printf("+");
-
-			}
-			else if( is_path( path, i, j ) == true )
 			{				
 				printf("o");
 			
@@ -121,15 +118,26 @@ static void print_path( fastpathfinder::map & m, fastpathfinder::pathfinder<> & 
 				fastpathfinder::point p(i, j);
 				fastpathfinder::pathfinder_cell * c = pf.getCell( p );
 				
-				if( c->revision == revision )
-				{
-					printf("*");
-				}
-				else
-				{
-					printf(".");
-				}				
+				printf("*");		
 			}
+		}
+
+		printf("\n");
+	}
+}
+
+static void print_map_cost( fastpathfinder::map & m, fastpathfinder::pathfinder<> & pf, size_t _bx, size_t _by, size_t _ex, size_t _ey )
+{
+	for( size_t j = _by; j != _ey; ++j )
+	{
+		for( size_t i = _bx; i != _ex; ++i )
+		{
+			fastpathfinder::point p(i, j);
+			fastpathfinder::pathfinder_cell * c = pf.getCell( p );
+
+			printf("%4d "
+				, c->cost 
+				);
 		}
 
 		printf("\n");
@@ -145,24 +153,32 @@ bool test( fastpathfinder::map & m )
 
 	m.clear();
 
-	size_t count = width * height * 0.6f;
-	for( size_t i = 0; i != count; ++i )
-	{
-		size_t x = 20 + rand() % (width - 30);
-		size_t y = 20 + rand() % (height - 30);
+	//size_t count = width * height * 0.6f;
+	//for( size_t i = 0; i != count; ++i )
+	//{
+	//	size_t x = 20 + rand() % (width - 30);
+	//	size_t y = 20 + rand() % (height - 30);
 
-		m.setCellMask( x, y, 1 );
-	}
+	//	m.setCellMask( x, y, 1 );
+	//}
 
-	uint32_t x = 2;
-	uint32_t y = 2;
-	uint32_t tx = width - 2;
-	uint32_t ty = height - 2;
+	uint32_t x = 1;
+	uint32_t y = 1;
+	uint32_t tx = 24;
+	uint32_t ty = 4;
 
-	m.setCellMask( x, y, 0 );
-	m.setCellMask( tx, ty, 0 );
+	//m.setCellMask( x, y, 0 );
+	//m.setCellMask( tx, ty, 0 );
 	
-	//m.setCellMask( tx + 1, ty, 1 );
+	m.setCellMask( 10, 0, 9 );
+	m.setCellMask( 10, 1, 9 );
+	m.setCellMask( 10, 2, 9 );
+	m.setCellMask( 10, 3, 9 );
+	m.setCellMask( 10, 4, 9 );
+	m.setCellMask( 10, 5, 9 );
+	m.setCellMask( 10, 6, 9 );
+	m.setCellMask( 10, 7, 9 );
+	m.setCellMask( 10, 8, 9 );
 	//m.setCellMask( tx, ty + 1, 1 );
 	//m.setCellMask( tx - 1, ty, 1 );
 	//m.setCellMask( tx, ty - 1, 1 );
@@ -179,7 +195,7 @@ bool test( fastpathfinder::map & m )
 	}
 
 	bool found;
-	while( pf.findPathNext( found ) == false )
+	while( pf.walkerWave( found ) == false )
 	{
 		//system("CLS");
 		//print_walk( m, pf, 0, 0, width, height );
@@ -195,19 +211,20 @@ bool test( fastpathfinder::map & m )
 	//print_walk( m, pf, 0, 0, width, height );
 
 	//if( found == true )
-	bool s = pf.findProcces();
+		//pf.findFilter();
 
+	print_map_cost( m, pf, 0, 0, width, height );		
+
+	bool s = pf.findPath();
 	if( s == false )
 	{
 		return false;
 	}
 
-	pf.findFilter();
+	pf.filterPath();
 
-	system("CLS");
 	print_path( m, pf, 0, 0, width, height );
-	//}
-		
+			
 	return found;
 }
 
@@ -215,24 +232,16 @@ void test1()
 {
 	fastpathfinder::map m;
 
-	size_t width = 70;
-	size_t height = 70;
+	size_t width = 25;
+	size_t height = 10;
 
 	m.initialize( width, height );
 
-	while(true)
-	{
-		bool s = test( m );
-		
-		if( s == true )
-		{
-			printf("\nwin!!\n");
-		}
+	bool s = test( m );
 				
-		char str[80];
-		gets(str);
-		system("CLS");
-	}
+	//char str[80];
+	//gets(str);
+	//system("CLS");
 }
 
 struct node
@@ -371,6 +380,6 @@ void test2()
 
 void main()
 {
-	//test1();
-	test2();
+	test1();
+	//test2();
 }

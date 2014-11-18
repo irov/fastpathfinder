@@ -31,7 +31,7 @@ namespace fastpathfinder
 		}
 
 	public:
-		bool initialize( uint32_t _width, uint32_t _height )
+		bool initialize( uint16_t _width, uint16_t _height )
 		{
 			m_width = _width;
 			m_height = _height;
@@ -50,25 +50,29 @@ namespace fastpathfinder
 
 		void clear()
 		{
-			for( size_t i = 0; i != m_height; ++i )
+			for( size_t j = 0; j != m_height; ++j )
 			{
-				new (m_cells[i]) map_cell[m_width];
+				for( size_t i = 0; i != m_width; ++i )
+				{
+					m_cells[j][i].block_mask = 0;
+					m_cells[j][i].block_weight = 1;
+				}
 			}
 		}
 
 	public:
-		uint32_t getWidth() const
+		uint16_t getWidth() const
 		{
 			return m_width;
 		}
 
-		uint32_t getHeight() const
+		uint16_t getHeight() const
 		{
 			return m_height;
 		}
 
 	public:
-		bool setCellMask( uint32_t _x, uint32_t _y, uint32_t _mask )
+		bool setCellMask( uint16_t _x, uint16_t _y, uint8_t _mask )
 		{
 			if( _x >= m_width || _y >= m_height )
 			{
@@ -83,7 +87,7 @@ namespace fastpathfinder
 			return true;
 		}
 
-		bool getCellMask( uint32_t _x, uint32_t _y, uint32_t & _mask ) const
+		bool getCellMask( uint16_t _x, uint16_t _y, uint8_t & _mask ) const
 		{
 			if( _x > m_width || _y > m_height )
 			{
@@ -93,7 +97,7 @@ namespace fastpathfinder
 			point p(_x, _y);
 			map_cell * c = this->getCell( p );
 
-			uint32_t mask = c->block_mask;
+			uint8_t mask = c->block_mask;
 
 			_mask = mask;
 
@@ -101,7 +105,29 @@ namespace fastpathfinder
 		}
 
 	public:
-		bool setCellWeight( uint32_t _x, uint32_t _y, uint8_t _weight )
+		void setCellWeightBuffer( const uint8_t * _weight )
+		{
+			for( size_t j = 0; j != m_height; ++j )
+			{
+				for( size_t i = 0; i != m_width; ++i )
+				{
+					size_t index = i + j * m_width;
+
+					uint8_t cell_weight = _weight[index];
+
+					if( cell_weight == 0 )
+					{
+						m_cells[j][i].block_weight = 1;
+					}
+					else
+					{
+						m_cells[j][i].block_weight = cell_weight;
+					}
+				}
+			}
+		}
+
+		bool setCellWeight( uint16_t _x, uint16_t _y, uint8_t _weight )
 		{
 			if( _x >= m_width || _y >= m_height )
 			{
@@ -116,7 +142,7 @@ namespace fastpathfinder
 			return true;
 		}
 
-		bool getCellWeight( uint32_t _x, uint32_t _y, uint8_t & _weight ) const
+		bool getCellWeight( uint16_t _x, uint16_t _y, uint8_t & _weight ) const
 		{
 			if( _x > m_width || _y > m_height )
 			{
@@ -142,8 +168,9 @@ namespace fastpathfinder
 		}
 
 	protected:
-		size_t m_width;
-		size_t m_height;
+		uint16_t m_width;
+		uint16_t m_height;
+
 		map_cell ** m_cells;
 	};
 }

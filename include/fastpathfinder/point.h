@@ -5,19 +5,21 @@
 namespace fastpathfinder
 {
 	//////////////////////////////////////////////////////////////////////////
+#	pragma pack(push, 1)
 	struct point
 	{
 		point()
 		{
 		}
 
-		point( uint32_t _x, uint32_t _y )
+		point( uint16_t _x, uint16_t _y )
 			: x(_x)
 			, y(_y)
 		{
 		}
 
-		uint32_t x;
-		uint32_t y;
+		uint16_t x;
+		uint16_t y;
 	};
+#	pragma pack(pop)
 }

@@ -10,7 +10,6 @@
 #	include <stdint.h>
 #	include <memory.h>
 
-#	include <stdex/stl_vector.h>
 #	include <stdex/stl_list.h>
 
 namespace fastpathfinder
@@ -18,15 +17,18 @@ namespace fastpathfinder
 	//////////////////////////////////////////////////////////////////////////
 	enum EPathFinderState
 	{
+		EPFS_INVALID,
 		EPFS_INITIALIZE,
-		EPFS_BRESENHAM,
-		EPFS_GREEDY,
-		EPFS_HOPELESS
+		EPFS_STEP,
+		EPFS_WALK,
+		EPFS_FOUND,
+		EPFS_FILTER,
+		EPFS_END
 	};
 	//////////////////////////////////////////////////////////////////////////
-	typedef stdex::vector<point> point_array;
+	typedef FASTPATHFINDER_VECTOR<point> point_array;
 	//////////////////////////////////////////////////////////////////////////
-	typedef stdex::list<point> point_list;
+	typedef FASTPATHFINDER_LIST<point> point_list;
 	//////////////////////////////////////////////////////////////////////////
 	template<class TestWall = map_test_wall_2>
 	class pathfinder
@@ -36,10 +38,10 @@ namespace fastpathfinder
 			: m_map(nullptr)			
 			, m_width(0)
 			, m_height(0)
-			, m_state(EPFS_INITIALIZE)
+			, m_state(EPFS_INVALID)
 			, m_cells(nullptr)
+			, m_win_cost((uint32_t)-1)
 			, m_pathFound(false)
-			, m_pathFiltred(false)
 		{
 		}
 
@@ -68,6 +70,8 @@ namespace fastpathfinder
 				m_cells[i] = (pathfinder_cell *)FASTPATHFINDER_MALLOC(sizeof(pathfinder_cell) * m_width);
 			}
 
+			m_state = EPFS_INITIALIZE;
+
 			return true;
 		}
 		
@@ -79,23 +83,43 @@ namespace fastpathfinder
 			return c;
 		}
 
-		uint32_t getCellMask( point _point ) const
+		map_cell * getCellMap( point _point ) const
 		{
 			map_cell * cell = m_map->getCell( _point );
 
-			return cell->block_mask;
+			return cell;
+		}
+
+		uint8_t getCellMask( point _point ) const
+		{
+			map_cell * cell = m_map->getCell( _point );
+
+			uint8_t mask = cell->block_mask;
+
+			return mask;
 		}
 				
 	public:
-		bool findPathFirst( uint32_t _fromX, uint32_t _fromY, uint32_t _toX, uint32_t _toY )
+		bool findPathFirst( uint16_t _fromX, uint16_t _fromY, uint16_t _toX, uint16_t _toY )
 		{
 			if( _fromX >= m_width || _fromY >= m_height )
 			{
+				m_state = EPFS_INVALID;
+
 				return false;
 			}
 
 			if( _toX >= m_width || _toY >= m_height )
 			{
+				m_state = EPFS_INVALID;
+
+				return false;
+			}
+
+			if( _fromX == _toX && _fromY == _toY )
+			{
+				m_state = EPFS_INVALID;
+
 				return false;
 			}
 
@@ -104,11 +128,15 @@ namespace fastpathfinder
 
 			if( this->getCellMask( m_from ) != 0 )
 			{
+				m_state = EPFS_INVALID;
+
 				return false;
 			}
 
 			if( this->getCellMask( m_to ) != 0 )
 			{
+				m_state = EPFS_INVALID;
+
 				return false;
 			}
 						
@@ -124,95 +152,246 @@ namespace fastpathfinder
 
 			toCell->cost = 0;
 
-			m_walker_true.clear();
-			m_walker_false.clear();
+			m_win_cost = (uint32_t)-1;
 
-			m_walker_true.push_back( m_to );
+			m_walker_black.clear();
+			m_walker_white.clear();
 
-			m_walker_index = m_walker_true.begin();
+			m_walker_black.push_back( m_to );
+
+			this->walkerBresenham( m_to, m_from );
+
 			m_pathFound = false;
-			m_pathFiltred = false;
 
-			m_state = EPFS_BRESENHAM;
+			m_state = EPFS_STEP;
 
 			return true;
 		}
 
-		bool findPathNext( bool & _found )
+	public:
+		bool walkerBresenham( point _from, point _to )
 		{
-			switch( m_state )
+			bresenham_line br;
+			s_make_bresenham_line( br, _from, _to );
+
+			point prev = _from;
+			point next = s_next_bresenham_line_point( br, _from );
+
+			while( true, true )
+			{	
+				uint32_t angle = s_get_neighbour_point_angle( prev, next );
+
+				map_cell * map = this->getCellMap( next );
+
+				if( map->block_mask != 0 )
+				{
+					return false;
+				}
+
+				if( TestWall(m_map, m_width, m_height)( prev, angle ) == true )
+				{
+					return false;
+				}
+
+				pathfinder_cell * prev_cell = this->getCell( prev );
+				pathfinder_cell * next_cell = this->getCell( next );
+
+				uint32_t next_cost = cell_angle_to_cost[angle];
+
+				uint32_t next_weight_cost = next_cost * map->block_weight;
+
+				uint32_t np_cost = prev_cell->cost + next_weight_cost;
+
+				next_cell->cost = np_cost;
+
+				m_walker_black.push_back( next );
+
+				if( next.x == _to.x && next.y == _to.y )
+				{	
+					m_win_cost = np_cost;
+
+					break;
+				}
+
+				prev = next;
+				next = s_next_bresenham_line_point( br, next );								
+			}
+
+			return true;
+		}
+
+		bool walkerWave( bool & _found )
+		{
+			if( m_state != EPFS_STEP )
 			{
-			case EPFS_INITIALIZE:
+				return false;
+			}
+
+			point tp = m_from;
+
+			for( point_list::const_iterator 
+				it = m_walker_black.begin(),
+				it_end = m_walker_black.end();
+			it != it_end;
+			++it )
+			{
+				point p = *it;
+
+				pathfinder_cell * p_cell = this->getCell( p );
+				
+				for( uint32_t i = 0; i != 8; ++i )
+				{
+					int16_t dx = cell_angle_to_deltha_x[i];
+					int16_t dy = cell_angle_to_deltha_y[i];
+
+					uint16_t px = p.x + dx;
+					uint16_t py = p.y + dy;
+
+					if( px >= m_width || py >= m_height )
+					{
+						continue;
+					}
+
+					point np(px, py);
+					map_cell * np_map_cell = this->getCellMap( np );
+
+					if( np_map_cell->block_mask != 0 )
+					{
+						continue;
+					}
+
+					pathfinder_cell * np_cell = this->getCell( np );
+
+					uint32_t next_cost = cell_angle_to_cost[i];
+						
+					uint32_t next_weight_cost = next_cost * np_map_cell->block_weight;
+
+					uint32_t np_cost = p_cell->cost + next_weight_cost;
+					
+					if( np_cost >= np_cell->cost )
+					{
+						continue;
+					}
+
+					if( np_cost >= m_win_cost )
+					{
+						continue;
+					}
+
+					
+					uint16_t future_distance = s_point_distance( m_from, np );
+					uint32_t future_cost = future_distance * cell_line_cost;
+					uint32_t np_future_cost = p_cell->cost + future_cost;
+
+					if( np_future_cost >= m_win_cost )
+					{
+						continue;
+					}
+
+					np_cell->cost = np_cost;
+
+					if( np.x == m_from.x && np.y == m_from.y )
+					{
+						m_win_cost = np_cost;
+
+						continue;
+					}
+
+					m_walker_white.push_back( np );
+				}
+			}
+
+			if( m_walker_white.empty() == true )
+			{
+				if( m_win_cost != (uint32_t)-1 )
+				{
+					_found = true;
+				}
+				else
 				{
 					_found = false;
-					return true;
-				}break;
-			case EPFS_BRESENHAM:
+				}
+
+				m_state = EPFS_WALK;
+
+				return true;
+			}
+
+			m_walker_black.swap( m_walker_white );
+			m_walker_white.clear();
+
+			return false;			
+		}
+
+	public:
+		const point_array & getPath() const
+		{
+			return m_path;
+		}
+
+		const point_array & getPathFilter() const
+		{
+			return m_path_filter;
+		}
+			
+	public:
+		bool findPath()
+		{
+			if( m_state != EPFS_WALK )
+			{
+				return false;
+			}
+
+			m_state = EPFS_FOUND;
+
+			m_path.clear();
+					
+			uint16_t lx = m_to.x > m_from.x ? m_to.x - m_from.x : m_from.x > m_to.x;
+			uint16_t ly = m_to.y > m_from.y ? m_to.y - m_from.y : m_from.y > m_to.y;
+
+			m_path.reserve( lx + ly );
+
+			m_path.push_back( m_from );
+
+			while( true, true )
+			{	
+				point next = m_path.back();
+
+				if( next.x == m_to.x && next.y == m_to.y )
 				{
-					if( this->walkerBresenham( m_to, m_from ) == true )
-					{
-						m_walker_true.push_back( m_from );
-
-						m_path.clear();
-						m_path.push_back( m_from );
-						m_path.push_back( m_to );
-
-						m_path_filter.clear();
-						m_path_filter.push_back( m_from );
-						m_path_filter.push_back( m_to );
-
-						m_pathFound = true;
-						m_pathFiltred = true;
-
-						_found = true;
-						return true;
-					}
-									
-					m_state = EPFS_GREEDY;
-				}break;
-			case EPFS_GREEDY:
-				{
-					bool found = false;
-					if( this->walkerGreedy( m_from, found ) == false )
-					{						
-						return false;
-					}
-
-					if( found == true )
-					{
-						_found = found;
-						return true;
-					}
-
-					m_state = EPFS_HOPELESS;
-				}break;
-			case EPFS_HOPELESS:
-				{
-					_found = false;
 					return true;
 				}
-			};
-			
+
+				if( this->findAround_( next ) == false )
+				{
+					m_state = EPFS_INVALID;
+
+					return false;
+				}
+			}
+
+			m_state = EPFS_INVALID;
+
 			return false;
 		}
 
-		void findFilter()
+		bool filterPath()
 		{
-			if( m_pathFiltred == true )
+			if( m_state != EPFS_FOUND )
 			{
-				return;
+				return false;
 			}
 
-			m_pathFiltred = true;
+			m_state = EPFS_FILTER;
 
 			size_t size = m_path.size();
 
 			if( size < 2 )
 			{
-				return;
-			}
+				m_state = EPFS_INVALID;
 
-			m_path_filter.reserve(size);
+				return false;
+			}
 
 			if( size == 2 )
 			{
@@ -222,7 +401,7 @@ namespace fastpathfinder
 				m_path_filter.push_back( p0 );
 				m_path_filter.push_back( p1 );
 
-				return;
+				return true;
 			}
 
 			point p0 = m_path[0];
@@ -248,7 +427,7 @@ namespace fastpathfinder
 				{
 					point p1 = m_path[it_next];
 
-					if( this->testWallBresenham( p0, p1 ) == true )
+					if( this->testWallBresenham_( p0, p1 ) == true )
 					{
 						continue;
 					}
@@ -261,233 +440,12 @@ namespace fastpathfinder
 
 				it = it2;
 			}
-		}
-
-	public:
-		const point_array & getPath() const
-		{
-			return m_path;
-		}
-
-		const point_array & getPathFilter() const
-		{
-			return m_path_filter;
-		}
-			
-	protected:
-		bool walkerGreedy( point _to, bool & _found )
-		{
-			if( m_walker_index == m_walker_true.end() )
-			{
-				if( m_walker_false.empty() == true )
-				{
-					_found = false;
-					return true;
-				}
-
-				point p = m_walker_false.back();
-				m_walker_false.pop_back();
-
-				m_walker_true.clear();
-				m_walker_true.push_back( p );
-
-				m_walker_index = m_walker_true.begin();
-
-				//m_walker_true.swap( m_walker_false );
-				//m_walker_false.clear();
-				//m_walker_index = 0;
-			}
-			
-			point test = *m_walker_index;
-
-			if( this->walkerWave( test, _to ) == true )
-			{
-				_found = true;
-				return true;
-			}
-
-			++m_walker_index;
-		
-			return false;
-		}
-
-		bool walkerBresenham( point _from, point _to )
-		{
-			bresenham_line br;
-			s_make_bresenham_line( br, _from, _to );
-
-			point prev = _from;
-			point next = s_next_bresenham_line_point( br, _from );
-
-			while( true, true )
-			{	
-				uint32_t angle = s_get_neighbour_point_angle( prev, next );
-		
-				uint32_t mask = this->getCellMask( next );
-
-				if( mask != 0 )
-				{
-					return false;
-				}
-								
-				if( TestWall(m_map, m_width, m_height)( prev, angle ) == true )
-				{
-					return false;
-				}
-
-				if( next.x == _to.x && next.y == _to.y )
-				{	
-					break;
-				}
-
-				prev = next;
-				next = s_next_bresenham_line_point( br, next );
-			}
 
 			return true;
 		}
 
-		bool walkerPoint( point _p, uint32_t _cost, uint32_t _angle, point & _neighbour )
-		{
-			int32_t dx = cell_angle_to_deltha_x[_angle];
-			int32_t dy = cell_angle_to_deltha_y[_angle];
-
-			point neighbour(_p.x + dx, _p.y + dy);
-
-			if( neighbour.x >= m_width || neighbour.y >= m_height )
-			{
-				return false;
-			}
-
-			uint32_t mask = this->getCellMask( neighbour );				
-
-			if( mask != 0 )
-			{
-				return false;
-			}
-
-			uint32_t next_cost = cell_angle_to_cost[_angle];
-			uint32_t test_cell_cost = _cost + next_cost;
-
-			pathfinder_cell * neighbour_cell = this->getCell( neighbour );
-			uint32_t neighbour_cell_cost = neighbour_cell->cost;
-
-			if( neighbour_cell_cost <= test_cell_cost )
-			{
-				return false;
-			}
-
-			if( TestWall(m_map, m_width, m_height)( _p, _angle ) == true )
-			{
-				return false;
-			}
-
-			neighbour_cell->cost = test_cell_cost;
-
-			_neighbour = neighbour;
-
-			return true;
-		}
-
-		bool walkerWave( point _p, point _to )
-		{
-			pathfinder_cell * cell = this->getCell( _p );
-
-			uint32_t angle = s_get_point_angle( _p, _to );
-			
-			uint32_t cost = cell->cost;
-
-			point neighbour0;
-			if( walkerPoint( _p, cost, angle, neighbour0 ) == true )
-			{
-				if( neighbour0.x == _to.x && neighbour0.y == _to.y )
-				{	
-					return true;
-				}
-
-				m_walker_true.push_back( neighbour0 );
-			}
-
-			uint32_t best_angle_count = cell_best_angle_count[angle];
-
-			for( uint32_t i = 0; i != best_angle_count; ++i )
-			{
-				int32_t deltha_angle = cell_next_point_deltha[i];
-
-				uint32_t test_angle = (angle + 8 + deltha_angle) % 8;
-
-				point neighbour;
-				if( walkerPoint( _p, cost, test_angle, neighbour ) == true )
-				{
-					if( neighbour.x == _to.x && neighbour.y == _to.y )
-					{	
-						return true;
-					}
-
-					m_walker_true.push_back( neighbour );
-				}
-			}
-
-			for( uint32_t i = best_angle_count; i != 7; ++i )
-			{
-				int32_t deltha_angle = cell_next_point_deltha[i];
-
-				uint32_t test_angle = (angle + 8 + deltha_angle) % 8;
-
-				point neighbour;
-				if( walkerPoint( _p, cost, test_angle, neighbour ) == true )
-				{
-					if( neighbour.x == _to.x && neighbour.y == _to.y )
-					{	
-						return true;
-					}
-
-					m_walker_false.push_back( neighbour );
-				}
-			}
-			
-			return false;
-		}
-
-	public:
-		bool findProcces()
-		{
-			if( m_pathFound == true )
-			{
-				return true;
-			}
-
-			m_pathFound = true;
-
-			m_path.clear();
-			
-			uint32_t lx = m_to.x > m_from.x ? m_to.x - m_from.x : m_from.x > m_to.x;
-			uint32_t ly = m_to.y > m_from.y ? m_to.y - m_from.y : m_from.y > m_to.y;
-
-			m_path.reserve( lx + ly );
-
-			m_path.push_back( m_from );
-
-			while( true, true )
-			{	
-				point next = m_path.back();
-
-				if( next.x == m_to.x && next.y == m_to.y )
-				{
-					return true;
-				}
-
-				if( this->findAround( next ) == false )
-				{
-					return false;
-				}
-			}
-
-			return false;
-		}
-
 	protected:
-		bool findAround( point _point )
+		bool findAround_( point _point )
 		{
 			pathfinder_cell * point_cell = this->getCell( _point );
 			uint32_t cost = point_cell->cost;
@@ -497,8 +455,8 @@ namespace fastpathfinder
 			bool successful = false;
 			for( uint32_t i = 0; i != 8; ++i )
 			{
-				int32_t dx = cell_angle_to_deltha_x[i];
-				int32_t dy = cell_angle_to_deltha_y[i];
+				int16_t dx = cell_angle_to_deltha_x[i];
+				int16_t dy = cell_angle_to_deltha_y[i];
 
 				point next;
 				next.x = _point.x + dx;
@@ -511,7 +469,7 @@ namespace fastpathfinder
 
 				pathfinder_cell * next_cell = this->getCell( next );
 
-				if( cost < next_cell->cost )
+				if( cost <= next_cell->cost )
 				{
 					continue;
 				}
@@ -538,7 +496,7 @@ namespace fastpathfinder
 			return true;
 		}
 
-		bool testWallBresenham( point _from, point _to ) const
+		bool testWallBresenham_( point _from, point _to ) const
 		{
 			bresenham_line br;
 			s_make_bresenham_line( br, _from, _to );
@@ -568,24 +526,24 @@ namespace fastpathfinder
 	public:
 		const map * m_map;
 
-		uint32_t m_width;
-		uint32_t m_height;
+		uint16_t m_width;
+		uint16_t m_height;
 
 		point m_from;
 		point m_to;
+
+		uint32_t m_win_cost;
 		
 		EPathFinderState m_state;
 		
 		pathfinder_cell ** m_cells;
 
-		point_list m_walker_true;
-		point_list m_walker_false;
-		point_list::iterator m_walker_index;
-		
+		point_list m_walker_black;
+		point_list m_walker_white;
+	
 		point_array m_path;
 		point_array m_path_filter;
 
 		bool m_pathFound;
-		bool m_pathFiltred;
 	};
 }

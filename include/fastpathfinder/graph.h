@@ -1,6 +1,6 @@
 #	pragma once
 
-#	include <stdex/stl_vector.h>
+#	include "fastpathfinder/config.h"
 
 namespace fastpathfinder
 {	
@@ -10,7 +10,7 @@ namespace fastpathfinder
 		uint32_t weight;
 	};
 
-	typedef stdex::vector<graph_edge> vector_graph_edge;
+	typedef FASTPATHFINDER_VECTOR<graph_edge> vector_graph_edge;
 
 	struct graph_node
 	{		 
@@ -20,32 +20,58 @@ namespace fastpathfinder
 		uint32_t weight;
 	};
 
-	typedef stdex::vector<graph_node *> vector_graph_node;
+	typedef FASTPATHFINDER_VECTOR<graph_node *> vector_graph_node;
 
 	class graph
 	{
 	public:
-		void addNode( graph_node * _node, bool _block = false )
+		void addNode( graph_node * _node, bool _block )
 		{
 			_node->block = _block;
 			_node->weight = (uint32_t)-1;
-
+			
 			m_nodes.push_back( _node );
 		}
 
-		void addEdge( graph_node * _from, graph_node * _to, uint32_t _weight )
+		bool addEdge( graph_node * _from, graph_node * _to, uint32_t _weight )
 		{
+			if( _from->weight != (uint32_t)-1 )
+			{
+				return false;
+			}
+
+			if( _to->weight != (uint32_t)-1 )
+			{
+				return false;
+			}
+
+			if( _weight == 0 )
+			{
+				return false;
+			}
+
 			graph_edge edge;
 			edge.to = _to;
 			edge.weight = _weight;
 
 			_from->edges.push_back( edge );
+
+			return true;
 		}
 
-		void addEdge2( graph_node * _from, graph_node * _to, uint32_t _weight )
+		bool addEdge2( graph_node * _from, graph_node * _to, uint32_t _weight )
 		{
-			this->addEdge( _from, _to, _weight );
-			this->addEdge( _to, _from, _weight );
+			if( this->addEdge( _from, _to, _weight ) == false )
+			{
+				return false;
+			}
+			
+			if( this->addEdge( _to, _from, _weight ) == false )
+			{
+				return false;
+			}
+
+			return true;
 		}
 
 		void blockNode( graph_node * _node, bool _block )

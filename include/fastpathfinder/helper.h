@@ -7,11 +7,11 @@ namespace fastpathfinder
 	//////////////////////////////////////////////////////////////////////////
 	static const int32_t cell_next_point_deltha[7] = {-1, 1, -2, 2, -3, 3, 4};
 	//////////////////////////////////////////////////////////////////////////
-	static const int32_t cell_matrix_to_deltha_x[9] = {-1, 0, 1, -1, 0, 1, -1, 0, 1};
-	static const int32_t cell_matrix_to_deltha_y[9] = {-1, -1, -1, 0, 0, 0, 1, 1, 1};
+	static const int16_t cell_matrix_to_deltha_x[9] = {-1, 0, 1, -1, 0, 1, -1, 0, 1};
+	static const int16_t cell_matrix_to_deltha_y[9] = {-1, -1, -1, 0, 0, 0, 1, 1, 1};
 	//////////////////////////////////////////////////////////////////////////
-	static const int32_t cell_angle_to_deltha_x[8] = {1, 1, 0, -1, -1, -1, 0, 1};
-	static const int32_t cell_angle_to_deltha_y[8] = {0, -1, -1, -1, 0, 1, 1, 1};
+	static const int16_t cell_angle_to_deltha_x[8] = {1, 1, 0, -1, -1, -1, 0, 1};
+	static const int16_t cell_angle_to_deltha_y[8] = {0, -1, -1, -1, 0, 1, 1, 1};
 	//////////////////////////////////////////////////////////////////////////
 	static const uint32_t cell_diagonal_cost = 140;
 	static const uint32_t cell_line_cost = 99;
@@ -27,13 +27,13 @@ namespace fastpathfinder
 	//////////////////////////////////////////////////////////////////////////
 	struct bresenham_line
 	{
-		int32_t deltaX;
-		int32_t deltaY;
+		int16_t deltaX;
+		int16_t deltaY;
 
-		int32_t signX;
-		int32_t signY;
+		int16_t signX;
+		int16_t signY;
 
-		int32_t error;
+		int16_t error;
 	};
 	//////////////////////////////////////////////////////////////////////////
 	inline static void s_make_bresenham_line( bresenham_line & _br, point _from, point _to )
@@ -72,10 +72,10 @@ namespace fastpathfinder
 	//////////////////////////////////////////////////////////////////////////
 	inline static uint32_t s_get_neighbour_point_angle( point _from, point _to )
 	{
-		uint32_t deltaX = _to.x >= _from.x ? (_to.x - _from.x) + 1 : 0;
-		uint32_t deltaY = _to.y >= _from.y ? (_to.y - _from.y) + 1 : 0;
+		uint16_t deltaX = _to.x >= _from.x ? (_to.x - _from.x) + 1 : 0;
+		uint16_t deltaY = _to.y >= _from.y ? (_to.y - _from.y) + 1 : 0;
 
-		uint32_t matrix = deltaX + deltaY * 3;
+		uint16_t matrix = deltaX + deltaY * 3;
 
 		uint32_t angle = cell_matrix_to_angle[matrix];
 
@@ -84,10 +84,10 @@ namespace fastpathfinder
 	//////////////////////////////////////////////////////////////////////////
 	inline static uint32_t s_get_point_angle( point _from, point _to )
 	{
-		uint32_t deltaX = _to.x < _from.x ? 0 : ((_to.x == _from.x) ? 1 : 2);
-		uint32_t deltaY = _to.y < _from.y ? 0 : ((_to.y == _from.y) ? 1 : 2);
+		uint16_t deltaX = _to.x < _from.x ? 0 : ((_to.x == _from.x) ? 1 : 2);
+		uint16_t deltaY = _to.y < _from.y ? 0 : ((_to.y == _from.y) ? 1 : 2);
 
-		uint32_t matrix = deltaX + deltaY * 3;
+		uint16_t matrix = deltaX + deltaY * 3;
 
 		uint32_t angle = cell_matrix_to_angle[matrix];
 
@@ -96,10 +96,10 @@ namespace fastpathfinder
 	//////////////////////////////////////////////////////////////////////////
 	inline static uint32_t s_get_next_point_cost( point _from, point _to )
 	{
-		uint32_t deltaX = _to.x > _from.x ? _to.x - _from.x : _from.x - _to.x;
-		uint32_t deltaY = _to.y > _from.y ? _to.y - _from.y : _from.y - _to.y;
+		uint16_t deltaX = _to.x > _from.x ? _to.x - _from.x : _from.x - _to.x;
+		uint16_t deltaY = _to.y > _from.y ? _to.y - _from.y : _from.y - _to.y;
 
-		uint32_t diagonal = deltaX + deltaY;
+		uint16_t diagonal = deltaX + deltaY;
 
 		uint32_t weight = cell_diagonal_to_cost[diagonal];
 
@@ -119,23 +119,23 @@ namespace fastpathfinder
 	{
 		uint32_t matrix = cell_angle_to_matrix[_angle];
 
-		int32_t dx = cell_matrix_to_deltha_x[matrix];
-		int32_t dy = cell_matrix_to_deltha_y[matrix];
+		int16_t dx = cell_matrix_to_deltha_x[matrix];
+		int16_t dy = cell_matrix_to_deltha_y[matrix];
 
-		uint32_t nx = _point.x + dx;
-		uint32_t ny = _point.y + dy;
+		uint16_t nx = _point.x + dx;
+		uint16_t ny = _point.y + dy;
 
 		point np(nx, ny);
 
 		return np;
 	}
 	//////////////////////////////////////////////////////////////////////////
-	inline static uint32_t s_point_distance( point p0, point p1 )
+	inline static uint16_t s_point_distance( point p0, point p1 )
 	{
-		uint32_t dx = ( p1.x > p0.x ) ? p1.x - p0.x : p0.x - p1.x;
-		uint32_t dy = ( p1.y > p0.y ) ? p1.y - p0.y : p0.y - p1.y;
+		uint16_t dx = ( p1.x > p0.x ) ? p1.x - p0.x : p0.x - p1.x;
+		uint16_t dy = ( p1.y > p0.y ) ? p1.y - p0.y : p0.y - p1.y;
 
-		uint32_t distance = ( dy > dx ) ? ( (961 * dy + 398 * dx ) / 1000 ) : ( (961 * dx + 398 * dy ) / 1000 );
+		uint16_t distance = ( dy > dx ) ? ( (961 * dy + 398 * dx ) / 1000 ) : ( (961 * dx + 398 * dy ) / 1000 );
 
 		return distance;
 	}
