@@ -82,6 +82,11 @@ namespace fastpathfinder
 	public:
 		void getPath( graph_node * _from, graph_node * _to, vector_graph_node & _path )
 		{
+			if( _from == _to )
+			{
+				return;
+			}
+
 			this->clearWeight_();
 
 			this->wave_( _to, _from, 0 );
@@ -118,6 +123,11 @@ namespace fastpathfinder
 
 				if( edge.to->block == true )
 				{
+					if( edge.to == _to )
+					{
+						_to->weight = _from->weight + edge.weight;
+					}
+
 					continue;
 				}
 
@@ -135,6 +145,11 @@ namespace fastpathfinder
 		void makePath_( graph_node * _from, vector_graph_node & _path )
 		{
 			_path.push_back( _from );
+
+			if( _from->weight == 0 )
+			{
+				return;
+			}
 
 			for( vector_graph_edge::iterator
 				it = _from->edges.begin(),
