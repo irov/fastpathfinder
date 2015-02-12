@@ -177,7 +177,7 @@ namespace fastpathfinder
 			point prev = _from;
 			point next = s_next_bresenham_line_point( br, _from );
 
-			while( true, true )
+			for(;;)
 			{	
 				uint32_t angle = s_get_neighbour_point_angle( prev, next );
 
@@ -226,8 +226,6 @@ namespace fastpathfinder
 			{
 				return false;
 			}
-
-			point tp = m_from;
 
 			for( point_list::const_iterator 
 				it = m_walker_black.begin(),
@@ -353,7 +351,7 @@ namespace fastpathfinder
 
 			m_path.push_back( m_from );
 
-			while( true, true )
+			for(;;)
 			{	
 				point next = m_path.back();
 
