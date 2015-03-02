@@ -15,7 +15,7 @@ namespace fastpathfinder
 	struct graph_node
 	{		 
 		vector_graph_edge edges;
-		bool block;
+		uint32_t block;
 
 		uint32_t weight;
 	};
@@ -25,7 +25,7 @@ namespace fastpathfinder
 	class graph
 	{
 	public:
-		void addNode( graph_node * _node, bool _block )
+		void addNode( graph_node * _node, uint32_t _block )
 		{
 			_node->block = _block;
 			_node->weight = (uint32_t)-1;
@@ -74,9 +74,16 @@ namespace fastpathfinder
 			return true;
 		}
 
-		void blockNode( graph_node * _node, bool _block )
+		void setBlock( graph_node * _node, uint32_t _block )
 		{
 			_node->block = _block;
+		}
+
+		uint32_t getBlock( graph_node * _node ) const
+		{
+			uint32_t block = _node->block;
+
+			return block;
 		}
 				
 	public:
@@ -121,7 +128,7 @@ namespace fastpathfinder
 			{
 				graph_edge & edge = *it;
 
-				if( edge.to->block == true )
+				if( edge.to->block != 0 )
 				{
 					if( edge.to == _to )
 					{
