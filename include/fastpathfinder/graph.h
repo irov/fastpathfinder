@@ -4,6 +4,8 @@
 
 namespace fastpathfinder
 {	
+	static const uint32_t FASTPATHFINDER_INVALID_WEIGHT = (uint32_t)-1;
+
 	struct graph_edge
 	{
 		struct graph_node * to;
@@ -28,19 +30,19 @@ namespace fastpathfinder
 		void addNode( graph_node * _node, uint32_t _block )
 		{
 			_node->block = _block;
-			_node->weight = (uint32_t)-1;
+			_node->weight = FASTPATHFINDER_INVALID_WEIGHT;
 			
 			m_nodes.push_back( _node );
 		}
 
 		bool addEdge( graph_node * _from, graph_node * _to, uint32_t _weight )
 		{
-			if( _from->weight != (uint32_t)-1 )
+			if( _from->weight != FASTPATHFINDER_INVALID_WEIGHT )
 			{
 				return false;
 			}
 
-			if( _to->weight != (uint32_t)-1 )
+			if( _to->weight != FASTPATHFINDER_INVALID_WEIGHT )
 			{
 				return false;
 			}
@@ -112,7 +114,7 @@ namespace fastpathfinder
 			{
 				graph_node * node = *it;
 
-				node->weight = (uint32_t)-1;
+				node->weight = FASTPATHFINDER_INVALID_WEIGHT;
 			}
 		}
 
