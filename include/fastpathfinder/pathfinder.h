@@ -362,9 +362,7 @@ namespace fastpathfinder
 
 				if( this->findAround_( next ) == false )
 				{
-					m_state = EPFS_INVALID;
-
-					return false;
+					break;
 				}
 			}
 

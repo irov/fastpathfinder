@@ -176,6 +176,8 @@ namespace fastpathfinder
 				}
 
 				this->makePath_( edge.to, _path );
+
+				break;
 			}
 		}
 		
