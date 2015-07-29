@@ -89,6 +89,25 @@ namespace fastpathfinder
 		}
 				
 	public:
+		bool hasPath( graph_node * _from, graph_node * _to )
+		{
+			if( _from == _to )
+			{
+				return true;
+			}
+
+			this->clearWeight_();
+
+			this->wave_( _to, _from, 0 );
+
+			if( _from->weight == 0 )
+			{
+				return false;
+			}
+
+			return true;
+		}
+
 		void getPath( graph_node * _from, graph_node * _to, vector_graph_node & _path )
 		{
 			if( _from == _to )
@@ -101,6 +120,22 @@ namespace fastpathfinder
 			this->wave_( _to, _from, 0 );
 
 			this->makePath_( _from, _path );
+		}
+
+		uint32_t getPathWeight( graph_node * _from, graph_node * _to )
+		{
+			if( _from == _to )
+			{
+				return 0;
+			}
+
+			this->clearWeight_();
+
+			this->wave_( _to, _from, 0 );
+
+			uint32_t weight = this->makeWeight_( _from, 0 );
+
+			return weight;
 		}
 
 	protected:
@@ -130,6 +165,13 @@ namespace fastpathfinder
 			{
 				graph_edge & edge = *it;
 
+				uint32_t step_weight = _from->weight + edge.weight;
+
+				if( step_weight > edge.to->weight )
+				{
+					continue;
+				}
+
 				if( edge.to->block != 0 )
 				{
 					if( edge.to == _to )
@@ -137,13 +179,6 @@ namespace fastpathfinder
 						_to->weight = _from->weight + edge.weight;
 					}
 
-					continue;
-				}
-
-				uint32_t step_weight = _from->weight + edge.weight;
-
-				if( step_weight > edge.to->weight )
-				{
 					continue;
 				}
 				
@@ -179,6 +214,36 @@ namespace fastpathfinder
 
 				break;
 			}
+		}
+
+		uint32_t makeWeight_( graph_node * _from, uint32_t _weight )
+		{
+			if( _from->weight == 0 )
+			{
+				return _weight;
+			}
+
+			for( vector_graph_edge::iterator
+				it = _from->edges.begin(),
+				it_end = _from->edges.end();
+			it != it_end;
+			++it )
+			{
+				graph_edge & edge = *it;
+
+				uint32_t step_weight = _from->weight - edge.weight;
+
+				if( step_weight != edge.to->weight )
+				{
+					continue;
+				}
+
+				uint32_t total_weight = this->makeWeight_( edge.to, _weight + edge.weight );
+
+				return total_weight;
+			}
+
+			return _weight;
 		}
 		
 	protected:
