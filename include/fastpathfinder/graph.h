@@ -100,7 +100,7 @@ namespace fastpathfinder
 
 			this->wave_( _to, _from, 0 );
 
-			if( _from->weight == 0 )
+			if( _from->weight == FASTPATHFINDER_INVALID_WEIGHT )
 			{
 				return false;
 			}
@@ -108,18 +108,25 @@ namespace fastpathfinder
 			return true;
 		}
 
-		void getPath( graph_node * _from, graph_node * _to, vector_graph_node & _path )
+		bool getPath( graph_node * _from, graph_node * _to, vector_graph_node & _path )
 		{
 			if( _from == _to )
 			{
-				return;
+				return true;
 			}
 
 			this->clearWeight_();
 
 			this->wave_( _to, _from, 0 );
 
+			if( _from->weight == FASTPATHFINDER_INVALID_WEIGHT )
+			{
+				return false;
+			}
+
 			this->makePath_( _from, _path );
+
+			return true;
 		}
 
 		uint32_t getPathWeight( graph_node * _from, graph_node * _to )
@@ -132,6 +139,11 @@ namespace fastpathfinder
 			this->clearWeight_();
 
 			this->wave_( _to, _from, 0 );
+
+			if( _from->weight == FASTPATHFINDER_INVALID_WEIGHT )
+			{
+				return 0;
+			}
 
 			uint32_t weight = this->makeWeight_( _from, 0 );
 
