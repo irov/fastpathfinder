@@ -8,7 +8,8 @@ namespace fastpathfinder
 
 	struct graph_edge
 	{
-		struct graph_node * to;
+		struct graph_node * to;		
+		uint32_t mask;
 		uint32_t weight;
 	};
 
@@ -35,7 +36,7 @@ namespace fastpathfinder
 			m_nodes.push_back( _node );
 		}
 
-		bool addEdge( graph_node * _from, graph_node * _to, uint32_t _weight )
+		bool addEdge( graph_node * _from, graph_node * _to, uint32_t _mask, uint32_t _weight )
 		{
 			if( _from->weight != FASTPATHFINDER_INVALID_WEIGHT )
 			{
@@ -54,6 +55,7 @@ namespace fastpathfinder
 
 			graph_edge edge;
 			edge.to = _to;
+			edge.mask = _mask;
 			edge.weight = _weight;
 
 			_from->edges.push_back( edge );
@@ -61,14 +63,14 @@ namespace fastpathfinder
 			return true;
 		}
 
-		bool addEdge2( graph_node * _from, graph_node * _to, uint32_t _weight )
+		bool addEdge2( graph_node * _from, graph_node * _to, uint32_t _mask, uint32_t _weight )
 		{
-			if( this->addEdge( _from, _to, _weight ) == false )
+			if( this->addEdge( _from, _to, _mask, _weight ) == false )
 			{
 				return false;
 			}
 			
-			if( this->addEdge( _to, _from, _weight ) == false )
+			if( this->addEdge( _to, _from, _mask, _weight ) == false )
 			{
 				return false;
 			}
@@ -89,7 +91,7 @@ namespace fastpathfinder
 		}
 				
 	public:
-		bool hasPath( graph_node * _from, graph_node * _to )
+		bool hasPath( graph_node * _from, graph_node * _to, uint32_t _mask )
 		{
 			if( _from == _to )
 			{
@@ -98,7 +100,7 @@ namespace fastpathfinder
 
 			this->clearWeight_();
 
-			this->wave_( _to, _from, 0 );
+			this->wave_( _to, _from, _mask, 0 );
 
 			if( _from->weight == FASTPATHFINDER_INVALID_WEIGHT )
 			{
@@ -108,7 +110,7 @@ namespace fastpathfinder
 			return true;
 		}
 
-		bool getPath( graph_node * _from, graph_node * _to, vector_graph_node & _path )
+		bool getPath( graph_node * _from, graph_node * _to, uint32_t _mask, vector_graph_node & _path )
 		{
 			if( _from == _to )
 			{
@@ -117,7 +119,7 @@ namespace fastpathfinder
 
 			this->clearWeight_();
 
-			this->wave_( _to, _from, 0 );
+			this->wave_( _to, _from, _mask, 0 );
 
 			if( _from->weight == FASTPATHFINDER_INVALID_WEIGHT )
 			{
@@ -129,7 +131,7 @@ namespace fastpathfinder
 			return true;
 		}
 
-		uint32_t getPathWeight( graph_node * _from, graph_node * _to )
+		uint32_t getPathWeight( graph_node * _from, graph_node * _to, uint32_t _mask )
 		{
 			if( _from == _to )
 			{
@@ -138,7 +140,7 @@ namespace fastpathfinder
 
 			this->clearWeight_();
 
-			this->wave_( _to, _from, 0 );
+			this->wave_( _to, _from, _mask, 0 );
 
 			if( _from->weight == FASTPATHFINDER_INVALID_WEIGHT )
 			{
@@ -165,7 +167,7 @@ namespace fastpathfinder
 			}
 		}
 
-		void wave_( graph_node * _from, graph_node * _to, uint32_t _weight )
+		void wave_( graph_node * _from, graph_node * _to, uint32_t _mask, uint32_t _weight )
 		{
 			_from->weight = _weight;
 
@@ -176,6 +178,11 @@ namespace fastpathfinder
 			++it )
 			{
 				graph_edge & edge = *it;
+
+				if( (edge.mask & _mask) != edge.mask )
+				{
+					continue;
+				}
 
 				uint32_t step_weight = _from->weight + edge.weight;
 
@@ -194,7 +201,7 @@ namespace fastpathfinder
 					continue;
 				}
 				
-				this->wave_( edge.to, _to, step_weight );
+				this->wave_( edge.to, _to, _mask, step_weight );
 			}
 		}
 
