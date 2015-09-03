@@ -5,6 +5,7 @@
 namespace fastpathfinder
 {	
 	static const uint32_t FASTPATHFINDER_INVALID_WEIGHT = (uint32_t)-1;
+	static const uint32_t FASTPATHFINDER_INVALID_MASK = (uint32_t)-1;
 
 	struct graph_edge
 	{
@@ -88,6 +89,50 @@ namespace fastpathfinder
 			uint32_t block = _node->block;
 
 			return block;
+		}
+
+		bool setMask( graph_node * _from, graph_node * _to, uint32_t _mask )
+		{
+			for( vector_graph_edge::iterator
+				it = _from->edges.begin(),
+				it_end = _from->edges.end();
+			it != it_end;
+			++it )
+			{
+				graph_edge & eg = *it;
+
+				if( eg.to != _to )
+				{
+					continue;
+				}
+
+				eg.mask = _mask;
+
+				return true;
+			}
+
+			return false;
+		}
+
+		uint32_t getMask( graph_node * _from, graph_node * _to )
+		{
+			for( vector_graph_edge::iterator
+				it = _from->edges.begin(),
+				it_end = _from->edges.end();
+			it != it_end;
+			++it )
+			{
+				graph_edge & eg = *it;
+
+				if( eg.to != _to )
+				{
+					continue;
+				}
+
+				return eg.mask;
+			}
+
+			return FASTPATHFINDER_INVALID_MASK;
 		}
 				
 	public:
