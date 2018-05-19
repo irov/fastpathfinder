@@ -50,9 +50,9 @@ namespace fastpathfinder
 
 		void clear()
 		{
-			for( size_t j = 0; j != m_height; ++j )
+			for( uint16_t j = 0; j != m_height; ++j )
 			{
-				for( size_t i = 0; i != m_width; ++i )
+				for( uint16_t i = 0; i != m_width; ++i )
 				{
 					m_cells[j][i].block_mask = 0;
 					m_cells[j][i].block_weight = 1;
@@ -107,11 +107,11 @@ namespace fastpathfinder
 	public:
 		void setCellWeightBuffer( const uint8_t * _weight )
 		{
-			for( size_t j = 0; j != m_height; ++j )
+			for( uint16_t j = 0; j != m_height; ++j )
 			{
-				for( size_t i = 0; i != m_width; ++i )
+				for( uint16_t i = 0; i != m_width; ++i )
 				{
-					size_t index = i + j * m_width;
+                    uint16_t index = i + j * m_width;
 
 					uint8_t cell_weight = _weight[index];
 

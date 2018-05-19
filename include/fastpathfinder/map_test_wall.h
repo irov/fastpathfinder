@@ -78,7 +78,7 @@ namespace fastpathfinder
 				return false;
 			}
 
-			size_t wall_count = 0;
+            uint32_t wall_count = 0;
 			for( uint32_t i = 0; i != 2; ++i )
 			{
 				uint32_t next_angle = s_get_next_foreach_angle( _angle, i );

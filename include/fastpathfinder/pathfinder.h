@@ -10,8 +10,6 @@
 #	include <stdint.h>
 #	include <memory.h>
 
-#	include <stdex/stl_list.h>
-
 namespace fastpathfinder
 {
 	//////////////////////////////////////////////////////////////////////////
@@ -380,7 +378,7 @@ namespace fastpathfinder
 
 			m_state = EPFS_FILTER;
 
-			size_t size = m_path.size();
+            point_array::size_type size = m_path.size();
 
 			if( size < 2 )
 			{
@@ -404,7 +402,7 @@ namespace fastpathfinder
 			m_path_filter.clear();
 			m_path_filter.push_back( p0 );
 
-			for( size_t 
+			for( point_array::size_type
 				it = 0,
 				it_end = size - 2;
 			it < it_end; 
@@ -412,10 +410,10 @@ namespace fastpathfinder
 			{
 				point p0 = m_path[it];
 
-				size_t it2 = it + 1;
+                point_array::size_type it2 = it + 1;
 				point p2 = m_path[it2];
 
-				for( size_t 
+				for( point_array::size_type
 					it_next = it + 2,
 					it_next_end = size; 
 				it_next != it_next_end;

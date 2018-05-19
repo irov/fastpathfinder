@@ -2,12 +2,12 @@
 
 #	ifndef FASTPATHFINDER_MALLOC
 #	include "stdex/allocator.h"
-#	define FASTPATHFINDER_MALLOC(S) stdex_malloc(S)
+#	define FASTPATHFINDER_MALLOC(S) stdex_malloc(S, "fastpathfinder")
 #	endif
 
 #	ifndef FASTPATHFINDER_FREE
 #	include "stdex/allocator.h"
-#	define FASTPATHFINDER_FREE(B, S) stdex_free(B)
+#	define FASTPATHFINDER_FREE(B, S) stdex_free(B, "fastpathfinder")
 #	endif 
 
 #	ifndef FASTPATHFINDER_VECTOR
